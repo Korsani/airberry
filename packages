@@ -1,0 +1,12 @@
++gawk
+-mawk
+-v4l-utils
+-timidity
+-xauth
+-x11-common
+-xauth
+-x11-common
+-xfonts-utils 
+-xfonts-encodings
++build-essential
++curl
