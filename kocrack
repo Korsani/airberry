@@ -1,0 +1,7 @@
+#!/bin/bash
+while [ "$1" != "" ]
+do
+	case $1 in
+		wpa) echo 'Enter passphrase' ;wpa_passphrase Malice > /tmp/wpa ; wpa_supplicant -B -D wext -i wlan0 -c /tmp/wpa ;;
+	esac
+done
