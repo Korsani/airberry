@@ -10,3 +10,6 @@
 -xfonts-encodings
 +build-essential
 +curl
+-dbus
++htop
++tcpdump
