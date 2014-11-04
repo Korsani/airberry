@@ -2,6 +2,8 @@
 while [ "$1" != "" ]
 do
 	case $1 in
-		wpa) echo 'Enter passphrase' ;wpa_passphrase Malice > /tmp/wpa ; wpa_supplicant -B -D wext -i wlan0 -c /tmp/wpa ;;
+		wpa) echo "Enter passphrase for ssid $2" ;wpa_passphrase "$2" > /tmp/wpa ; wpa_supplicant -B -D wext -i wlan0 -c /tmp/wpa ;;
+		kill) for p in run-at-boot wifite.py broadcast-keys airodump-ng aireplay-ng ; do pkill $p ; done;;
 	esac
+	shift
 done
