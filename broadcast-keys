@@ -64,8 +64,6 @@ while [ ! -e $cracked ]
 do
 	sleep 1
 done
-while true
-do
 	reset_if $if
 	echo -n -e "\r                                                      "
 	echo -n -e "\rWaiting  "
@@ -113,4 +111,3 @@ do
 			echo $bssid >> $connect_fail
 		fi
 	done
-done

@@ -7,5 +7,8 @@ then
 	exit 1
 fi
 cd /root
-while true ; do /root/bin/wifite.py --wep --all >/tmp/wifite.log ; done &
-/root/kocrack/broadcast-keys
+while true
+do
+	/root/bin/wifite.py --wep --all --scan-time 60 --power 15 >/tmp/wifite.log
+	/root/kocrack/broadcast-keys
+done
