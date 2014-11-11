@@ -16,5 +16,5 @@ _IP=$(hostname -I) || true
 if [ "$_IP" ]; then
   printf "My IP address is %s\n" "$_IP"
 fi
-nohup /root/kocrack/kocrack.sh > /root/autocrack.out 2>&1 &
+nohup /root/kocrack/run-at-boot > /tmp/kocrack.log 2>&1 &
 exit 0
