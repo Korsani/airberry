@@ -77,47 +77,47 @@ while [ ! -e $cracked ]
 do
 	sleep 1
 done
-	reset_if $if
-	echo -n -e "\r                                                      "
-	echo -n -e "\rWaiting  "
-	koca_spin
-	for line in $(tac $cracked)
-	do
-		bssid=$(echo $line | cut -d ',' -f 1)
-		ssid=$(echo $line | cut -d ',' -f 3)
-		key=$(echo $line | cut -d ',' -f 4)
-		if egrep -q "^$bssid$" $t
+reset_if $if
+echo -n -e "\r                                                      "
+echo -n -e "\rWaiting  "
+koca_spin
+for line in $(tac $cracked)
+do
+	bssid=$(echo $line | cut -d ',' -f 1)
+	ssid=$(echo $line | cut -d ',' -f 3)
+	key=$(echo $line | cut -d ',' -f 4)
+	if egrep -q "^$bssid$" $t
+	then
+		#echo -n "$ssid : connection tested"
+		sleep 3 
+		continue
+	fi
+	if egrep -q "^$bssid$" $connect_fail
+	then
+		#echo -n "$ssid : connection was failed"
+		sleep 3
+		continue
+	fi
+	echo -n -e  "\rAuthenticating to $ssid ($bssid)  "
+	if connect "$ssid" "$key" "$bssid"
+	then
+		echo 'ok'
+		dhclient -1 $if
+		echo -n 'Getting ip  '
+		wait_for_ip || continue
+		echo 'ok'
+		#route add default gw 192.168.0.254
+		display ws $ssid $key
+		if [ -n "$UPDATE_ME" ]
 		then
-			#echo -n "$ssid : connection tested"
-			sleep 3 
-			continue
+			echo 'Updating myself'
+			apt-get update > /dev/null
+			apt-get -y upgrade > /dev/null
+			#$HOME/bin/wifite.py --update >/dev/null
 		fi
-		if egrep -q "^$bssid$" $connect_fail
-		then
-			#echo -n "$ssid : connection was failed"
-			sleep 3
-			continue
-		fi
-		echo -n -e  "\rAuthenticating to $ssid ($bssid)  "
-		if connect "$ssid" "$key" "$bssid"
-		then
-			echo 'ok'
-			dhclient -1 $if
-			echo -n 'Getting ip  '
-			wait_for_ip || continue
-			echo 'ok'
-			#route add default gw 192.168.0.254
-			display ws $ssid $key
-			if [ -n "$UPDATE_ME" ]
-			then
-				echo 'Updating myself'
-				apt-get update > /dev/null
-				apt-get -y upgrade > /dev/null
-				#$HOME/bin/wifite.py --update >/dev/null
-			fi
-			reset_if $if
-		else
-			echo 'failed'
-			echo $bssid >> $connect_fail
-		fi
-	done
+		reset_if $if
+	else
+		echo 'failed'
+		echo $bssid >> $connect_fail
+	fi
+done
