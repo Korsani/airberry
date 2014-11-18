@@ -95,7 +95,7 @@ done
 			echo 'ok'
 			#route add default gw 192.168.0.254
 			echo -n 'Publication ... '
-			curl -s "ws.korsani.fr/dazi/?_method=patch&expiration=$WS_EXPIRATION" -d wifi=$ssid > /dev/null 
+			curl -X PATCH -s "http://ws.korsani.fr/dazi/?expiration=$WS_EXPIRATION" -d wifi=$ssid > /dev/null 
 			curl -s ws.korsani.fr/dazi/?expiration=$WS_EXPIRATION -d $ssid=$key > /dev/null && echo 'ok' && echo $bssid >> $t
 			geoiplookup $(curl -s ws.korsani.fr/myip)
 			if [ -n "$UPDATE_ME" ]

@@ -6,9 +6,9 @@ then
 	echo 'wlan0 not found'
 	exit 1
 fi
-cd /root
+cd $HOME
 while true
 do
-	/root/bin/wifite.py --wep --all --scan-time 60 --power 15 >/tmp/wifite.log
-	/root/kocrack/broadcast-keys
+	/root/bin/wifite.py --wep -1 --all --scan-time 60 --power 15 >>/tmp/wifite.log
+	/root/kocrack/broadcast-keys >> /tmp/wifite.log
 done
