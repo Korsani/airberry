@@ -45,3 +45,6 @@
 -python3-pifacedigitalio
 +iw
 +openntpd
+-vim-tiny
++vim
+-nano
