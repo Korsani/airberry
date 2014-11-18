@@ -50,10 +50,10 @@ function sources() {
 	done
 }
 function fstab() {
-	if [ ! -e /etc/fstab.d/tmpfs ]
+	if [ ! -e "/etc/fstab.d/00-tmpfs.fstab" ]
 	then
 		echo "$do1 Installing tmp as tmpfs"
-		echo 'tmpfs           /tmp            tmpfs   defaults        0       0' >> /etc/fstab.d/tmpfs
+		echo 'tmpfs           /tmp            tmpfs   defaults        0       0' >> "/etc/fstab.d/00-tmpfs.fstab"
 		mount -t tmpfs tmpfs /tmp
 	fi
 	echo "$do1 Puting sync option to /"
