@@ -20,6 +20,7 @@ src['/usr/src/aircrack-ng']="svn co http://svn.aircrack-ng.org/trunk/ /usr/src/a
 src['/usr/src/wiringPi']="git clone git://git.drogon.net/wiringPi /usr/src/wiringPi && cd /usr/src/wiringPi && ./build"
 src['/usr/src/pcd8544']='git clone https://github.com/XavierBerger/pcd8544.git /usr/src/pcd8544'
 src['/usr/src/wifite']="git clone https://github.com/Korsani/wifite.git /usr/src/wifite && mkdir -p $HOME/bin && ln -f -s /usr/src/wifite/wifite.py $HOME/bin/wifite.py"
+src['/usr/src/dosfstools']="git clone http://daniel-baumann.ch/git/software/dosfstools.git && cd /usr/src/dosfstools && make"
 function packages() {
 	echo "$do1 Uninstalling packages"
 	egrep '^-' $PACKAGES_FILE | sed -e 's/^-//' | xargs apt-get -q -y purge 
@@ -60,6 +61,14 @@ function fstab() {
 	sed -i.kocrack-root -e '/mmcblk0p2/c\/dev/mmcblk0p2  /               ext4    defaults,noatime,sync  0       1' /etc/fstab && mount -o remount /
 	echo "$do1 Puting sync option to /boot"
 	sed -i.kocrack-boot -e '/mmcblk0p1/c\/dev/mmcblk0p1  /boot           vfat    defaults,sync          0       2' /etc/fstab && mount -o remount /boot
+	if  $(dmesg | grep -q 'FAT-fs (mmcblk0p1): Volume was not properly unmounted') 
+	then
+		echo "$do1 fsck /boot"
+		cd /usr/src/dosfstools
+		umount /boot
+		./fsck.fat -a -V /dev/mmcblk0p1
+		mount /boot
+	fi
 }
 if [ -n "$*" ]
 then
