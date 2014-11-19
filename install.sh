@@ -8,20 +8,38 @@ do2="${_p}**${_e}"
 do3="${_p}***${_e}"
 [ $(id -u) -ne 0 ] && echo "I have to be run as root" && exit 1
 [ $(uname -m) != "armv6l" ] && echo "Not on RPi" && exit 1
-echo "${_r}!!!${_e} This ${_r}WILL${_e} break things. Please press enter to continue"
-read
-if  ! $(netstat -r | grep -q default) 
-then
-	echo 'No default route. Exiting.'
-	exit 1
-fi
 declare -A src
 src['/usr/src/aircrack-ng']="svn co http://svn.aircrack-ng.org/trunk/ /usr/src/aircrack-ng && cd /usr/src/aircrack-ng && make install"
 src['/usr/src/wiringPi']="git clone git://git.drogon.net/wiringPi /usr/src/wiringPi && cd /usr/src/wiringPi && ./build"
 src['/usr/src/pcd8544']='git clone https://github.com/XavierBerger/pcd8544.git /usr/src/pcd8544'
 src['/usr/src/wifite']="git clone https://github.com/Korsani/wifite.git /usr/src/wifite && mkdir -p $HOME/bin && ln -f -s /usr/src/wifite/wifite.py $HOME/bin/wifite.py"
-src['/usr/src/dosfstools']="git clone http://daniel-baumann.ch/git/software/dosfstools.git && cd /usr/src/dosfstools && make"
+src['/usr/src/dosfstools']="git clone http://daniel-baumann.ch/git/software/dosfstools.git /usr/src/dosfstools && cd /usr/src/dosfstools && make"
+trap '_post' 0
+function _pre(){
+	echo "$do3 executing _pre"
+	mount / -o remount,async
+	mount /boot -o remount,async
+}
+function _post(){
+	echo "$do3 executing _post"
+	mount / -o remount,sync
+	mount /boot -o remount,sync
+}
+function _check_default_route() {
+	netstat -r | grep -q default
+}
+function _warn(){
+	[ -n "$WAS_WARNED" ] && return 0
+	echo "${_r}!!!${_e} This ${_r}WILL${_e} break things. Please press enter to continue"
+	read
+	export WAS_WARNED=y
+}
+function help(){
+	egrep "^function [^_]" $0 | sed -e 's/function \(.*\)().*/\1/' | xargs
+}
 function packages() {
+	_warn
+	_check_default_route || return 1
 	echo "$do1 Uninstalling packages"
 	egrep '^-' $PACKAGES_FILE | sed -e 's/^-//' | xargs apt-get -q -y purge 
 	echo "$do1 Installing packages"
@@ -37,11 +55,19 @@ function packages() {
 	dpkg -l | egrep '^rc' | awk '{print $2}' | xargs apt-get -y purge
 }
 function interfaces() {
+	_warn
 	echo "$do1 Installing network interfaces"
 	cp -a etc_network_interfaces /etc/network/interfaces 
 }
 function sources() {
-	for d in "${!src[@]}"
+	_check_default_route || return 1
+	if [ -n "$@" ]
+	then
+		srcs="$*"
+	else
+		srcs="${!src[@]}"
+	fi
+	for d in "$srcs"
 	do
 		if [ ! -d $d ]
 		then
@@ -51,6 +77,7 @@ function sources() {
 	done
 }
 function fstab() {
+	_warn
 	if [ ! -e "/etc/fstab.d/00-tmpfs.fstab" ]
 	then
 		echo "$do1 Installing tmp as tmpfs"
@@ -63,6 +90,7 @@ function fstab() {
 	sed -i.kocrack-boot -e '/mmcblk0p1/c\/dev/mmcblk0p1  /boot           vfat    defaults,sync          0       2' /etc/fstab && mount -o remount /boot
 	if  $(dmesg | grep -q 'FAT-fs (mmcblk0p1): Volume was not properly unmounted') 
 	then
+		sources /usr/src/dosfstools
 		echo "$do1 fsck /boot"
 		cd /usr/src/dosfstools
 		umount /boot
@@ -75,6 +103,7 @@ then
 	WHAT="$*"
 fi
 echo "$do3 Will run : ${_w}$WHAT${_e}"
+_pre
 for what in $WHAT
 do
 	echo "$do2 Proceeding with ${_w}$what${_e}"
