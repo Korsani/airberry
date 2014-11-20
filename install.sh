@@ -18,12 +18,10 @@ trap '_post' 0
 function _pre(){
 	echo "$do3 executing _pre"
 	mount / -o remount,async
-	mount /boot -o remount,async
 }
 function _post(){
 	echo "$do3 executing _post"
 	mount / -o remount,sync
-	mount /boot -o remount,sync
 }
 function _check_default_route() {
 	netstat -r | grep -q default
@@ -87,16 +85,24 @@ function fstab() {
 	echo "$do1 Puting sync option to /"
 	sed -i.kocrack-root -e '/mmcblk0p2/c\/dev/mmcblk0p2  /               ext4    defaults,noatime,sync  0       1' /etc/fstab && mount -o remount /
 	echo "$do1 Puting sync option to /boot"
-	sed -i.kocrack-boot -e '/mmcblk0p1/c\/dev/mmcblk0p1  /boot           vfat    defaults,sync          0       2' /etc/fstab && mount -o remount /boot
+	sed -i.kocrack-boot -e '/mmcblk0p1/c\/dev/mmcblk0p1  /boot           vfat    defaults,noauto,sync          0       2' /etc/fstab
+	umount /boot 2>/dev/null
+}	
+function fsck(){
+	_warn
 	if  $(dmesg | grep -q 'FAT-fs (mmcblk0p1): Volume was not properly unmounted') 
 	then
 		sources /usr/src/dosfstools
 		echo "$do1 fsck /boot"
 		cd /usr/src/dosfstools
-		umount /boot
+		umount /boot >/dev/null
 		./fsck.fat -a -V /dev/mmcblk0p1
-		mount /boot
 	fi
+}
+function rpi-update(){
+	mount /boot
+	/usr/bin/rpi-update
+	umount /boot
 }
 if [ -n "$*" ]
 then
