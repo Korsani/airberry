@@ -111,8 +111,11 @@ do
 		if [ -n "$UPDATE_ME" ]
 		then
 			echo 'Updating myself'
+			mount /boot
+			trap 'umount /boot' 0
 			apt-get update > /dev/null
 			apt-get -y upgrade > /dev/null
+			rpi-update
 			#$HOME/bin/wifite.py --update >/dev/null
 		fi
 		reset_if $if
