@@ -9,6 +9,7 @@ trap "reset_if $if ; rm -f $t $connect_fail" 0
 cracked=$HOME/cracked.csv
 [ -z "$WS_EXPIRATION" ] && WS_EXPIRATION=36000
 function reset_if() {
+	echo "Reseting $if"
 	local if=$1
 	dhclient -r $if
 	ifconfig $if 0.0.0.0
