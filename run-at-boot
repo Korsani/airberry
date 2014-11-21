@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/bin
 export HOME=/root
 if [ ! ifconfig -a wlan0 >/dev/null ]
@@ -7,8 +7,10 @@ then
 	exit 1
 fi
 cd $HOME
+mkfifo /var/run/kocrack
+nohup $HOME/kocrack/check-fs-space.sh /tmp &
 while true
 do
-	/root/bin/wifite.py --wep -1 --all --scan-time 60 --power 15 >>/tmp/wifite.log
-	/root/kocrack/broadcast-keys >> /tmp/wifite.log
+	$HOME/bin/wifite.py --wep -1 --all --scan-time 60 --power 15 >>/tmp/wifite.log
+	$HOME/kocrack/broadcast-keys >> /tmp/wifite.log
 done
