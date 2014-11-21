@@ -78,13 +78,13 @@ function interfaces() {
 # Third part software
 function sources() {
 	_check_default_route || return 1
-	if [ -n "$@" ]
+	if [ -n "$1" ]
 	then
 		srcs="$*"
 	else
 		srcs="${!src[@]}"
 	fi
-	for d in "$srcs"
+	for d in $srcs
 	do
 		if [ ! -d $d ]
 		then
