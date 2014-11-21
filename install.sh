@@ -19,6 +19,7 @@ src['/usr/src/wiringPi']="git clone git://git.drogon.net/wiringPi /usr/src/wirin
 src['/usr/src/pcd8544']='git clone https://github.com/XavierBerger/pcd8544.git /usr/src/pcd8544'
 src['/usr/src/wifite']="git clone https://github.com/Korsani/wifite.git /usr/src/wifite && mkdir -p $HOME/bin && ln -f -s /usr/src/wifite/wifite.py $HOME/bin/wifite.py"
 src['/usr/src/dosfstools']="git clone http://daniel-baumann.ch/git/software/dosfstools.git /usr/src/dosfstools && cd /usr/src/dosfstools && make"
+src['/usr/src/etcd']="git clone https://github.com/coreos/etcd /usr/src/etcd && cd /usr/src/etcd && make"
 
 # On exit, run this
 trap '_post' 0
