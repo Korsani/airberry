@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 FS="$1"
-LOW_WATER_COMMAND="$2"
-[ -z "$2" ] && exit 1
+LOW_WATER_SPACE=500
+[ -z "$FS" ] && exit 1
 exec 5<>/var/run/kocrack
 while true
 do
