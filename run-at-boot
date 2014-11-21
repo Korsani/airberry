@@ -11,6 +11,11 @@ echo $$ > /var/run/$(basename "$0").pid
 cd $HOME
 mkfifo /var/run/kocrack
 nohup $HOME/kocrack/check-fs-space.sh /tmp &
+#airmon-ng start wlan0
+# Sort according to essid
+sort -u -t ',' -k 3 $HOME/cracked.csv $HOME/kocrack/cracked.csv > /tmp/c
+mv /tmp/c $HOME/kocrack/cracked.csv
+rm -f $HOME/cracked.csv
 while true
 do
 	$HOME/bin/wifite.py --wep -1 --all --scan-time 60 --power 15 >>/tmp/wifite.log
