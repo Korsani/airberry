@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Wonderful library
-source libkoca.sh
+source $(dirname "$0")/libkoca.sh
 # to get colored output
 getColor _w white _e reset _p purple _r hired
 do1="${_p}*${_e}"
@@ -45,7 +45,8 @@ function _warn(){
 	export WAS_WARNED=y
 }
 function help(){
-	egrep "^function [^_]" $0 | sed -e 's/function \(.*\)().*/\1/' | xargs
+	egrep "^function [^_]" $0 | sed -e 's/function \(.*\)().*/\1/' | xargs | tr ' ' '|'  | xargs echo -n "$0$_w"
+	echo "$_e"
 }
 # (Un)install packages
 # Package file is like that :
