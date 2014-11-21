@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/bin
 export HOME=/root
-if [ ! ifconfig -a wlan0 >/dev/null ]
+IFACE=wlan0
+if [ ! ifconfig -a $IFACE >/dev/null ]
 then
-	echo 'wlan0 not found'
+	echo "$IFACE not found"
 	exit 1
 fi
 cd $HOME
