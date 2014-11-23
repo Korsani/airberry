@@ -45,7 +45,7 @@ function _post(){
 	mount / -o remount,sync
 }
 function _check_default_route() {
-	netstat -r | grep -q default
+	netstat -r | egrep -q 'default|*' && ping -c 1 -q www.free.fr >/dev/null 2>&1
 }
 function _warn(){
 	[ -n "$WAS_WARNED" ] && return 0
@@ -71,7 +71,7 @@ function packages() {
 	apt-get update ; apt-get upgrade -y
 	echo "$do1 Installing packages"
 	packages=$(egrep '^\+' $PACKAGES_FILE | sed -e 's/^\+//' | xargs)
-	xargs apt-get -y install $packages
+	apt-get -y install $packages
 	echo "$do1 Removing orphans"
 	while [ -n "$(deborphan)" ]
 	do
