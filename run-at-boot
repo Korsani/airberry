@@ -3,7 +3,7 @@ export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/b
 export HOME=/root
 (/root/kocrack/welcome.py ; sleep 60 ; /root/kocrack/welcome.py ) &
 IFACE=wlan0
-if [ ! ifconfig -a $IFACE >/dev/null ]
+if  ! ifconfig -a $IFACE >/dev/null 
 then
 	echo "$IFACE not found"
 	exit 1
