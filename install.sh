@@ -12,6 +12,7 @@ do3="${_p}***${_e}"
 WHAT="packages interfaces rpi-update sources fstab fsck"
 # File listing package to add and remove
 PACKAGES_FILE=packages
+ETCD_VERSION='0.5.0-alpha.4'
 
 # Third part to install : their dir and how to build/install them
 declare -A src
@@ -22,7 +23,7 @@ src['/usr/src/wiringPi']="git clone https://github.com/rm-hull/wiringPi /usr/src
 src['/usr/src/pcd8544']='git clone https://github.com/rm-hull/pcd8544.git /usr/src/pcd8544 && pip install pillow & cd /usr/src/pcd8544 && ./setup.py clean build && ./setup.py install '
 src['/usr/src/wifite']="git clone https://github.com/Korsani/wifite.git /usr/src/wifite && mkdir -p $HOME/bin && ln -f -s /usr/src/wifite/wifite.py $HOME/bin/wifite.py"
 src['/usr/src/dosfstools']="git clone http://daniel-baumann.ch/git/software/dosfstools.git /usr/src/dosfstools && cd /usr/src/dosfstools && make"
-src['/usr/src/etcd']="git clone https://github.com/coreos/etcd /usr/src/etcd && apt-get install -y golang &&  cd /usr/src/etcd && make"
+src["/usr/src/etcd-$ETCD_VERSION"]="curl -L https://github.com/coreos/etcd/archive/v$ETCD_VERSION.tar.gz | tar -C /usr/src -xzf - && cd /usr/src/etcd-$ETCD_VERSION && PATH=$PATH:$HERE/go/bin ./build && cp bin/etcd  /usr/local/sbin/ && cp bin/etcdctl bin/etcd-migrate /usr/local/bin/"
 
 # On exit, run this
 trap '_post' 0
