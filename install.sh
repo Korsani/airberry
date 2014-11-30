@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
+HERE=$(cd $(dirname "$0") ; pwd)
 # Wonderful library
-source $(dirname "$0")/libkoca.sh
+source "$HERE"/libkoca.sh
 # to get colored output
 getColor _w white _e reset _p purple _r hired
 do1="${_p}*${_e}"
@@ -59,9 +60,13 @@ function packages() {
 	_warn
 	_check_default_route || return 1
 	echo "$do1 Uninstalling packages"
-	egrep '^-' $PACKAGES_FILE | sed -e 's/^-//' | xargs apt-get -q -y purge 
+	packages=$(egrep '^-' $PACKAGES_FILE | sed -e 's/^-//' | xargs)
+	apt-get -q -y purge $packages
+	echo "$do1 Updating existing packages"
+	apt-get update ; apt-get upgrade -y
 	echo "$do1 Installing packages"
-	egrep '^\+' $PACKAGES_FILE | sed -e 's/^\+//' | xargs apt-get -y install 
+	packages=$(egrep '^\+' $PACKAGES_FILE | sed -e 's/^\+//' | xargs)
+	xargs apt-get -y install $packages
 	echo "$do1 Removing orphans"
 	while [ -n "$(deborphan)" ]
 	do
@@ -71,6 +76,7 @@ function packages() {
 	apt-get -y autoremove 
 	echo "$do1 Purging conf files of uninstalled packages"
 	dpkg -l | egrep '^rc' | awk '{print $2}' | xargs apt-get -y purge
+	curl www.korsani.fr/.screenrc -o /root/.screenrc
 }
 function interfaces() {
 	_warn
