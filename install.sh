@@ -14,12 +14,14 @@ PACKAGES_FILE=packages
 
 # Third part to install : their dir and how to build/install them
 declare -A src
-src['/usr/src/aircrack-ng']="svn co http://svn.aircrack-ng.org/trunk/ /usr/src/aircrack-ng && cd /usr/src/aircrack-ng && make install"
-src['/usr/src/wiringPi']="git clone git://git.drogon.net/wiringPi /usr/src/wiringPi && cd /usr/src/wiringPi && ./build"
-src['/usr/src/pcd8544']='git clone https://github.com/XavierBerger/pcd8544.git /usr/src/pcd8544'
+src['/usr/src/aircrack-ng']="svn co http://svn.aircrack-ng.org/trunk/ /usr/src/aircrack-ng && cd /usr/src/aircrack-ng && apt-get install -y libnl-3-dev libnl-genl-3-dev && make install && apt-get -y purge libnl-3-dev libnl-genl-3-dev && airodump-ng-oui-update"
+#src['/usr/src/wiringPi']="git clone git://git.drogon.net/wiringPi /usr/src/wiringPi && cd /usr/src/wiringPi && ./build"
+#src['/usr/src/pcd8544']='git clone https://github.com/XavierBerger/pcd8544.git /usr/src/pcd8544 ; pip install wiringpi2 ; pip install spidev ; cd /usr/src/pcd8544 ; ./setup.py clean build ; ./setup.py install '
+src['/usr/src/wiringPi']="git clone https://github.com/rm-hull/wiringPi /usr/src/wiringPi && cd /usr/src/wiringPi && ./build"
+src['/usr/src/pcd8544']='git clone https://github.com/rm-hull/pcd8544.git /usr/src/pcd8544 && pip install pillow & cd /usr/src/pcd8544 && ./setup.py clean build && ./setup.py install '
 src['/usr/src/wifite']="git clone https://github.com/Korsani/wifite.git /usr/src/wifite && mkdir -p $HOME/bin && ln -f -s /usr/src/wifite/wifite.py $HOME/bin/wifite.py"
 src['/usr/src/dosfstools']="git clone http://daniel-baumann.ch/git/software/dosfstools.git /usr/src/dosfstools && cd /usr/src/dosfstools && make"
-src['/usr/src/etcd']="git clone https://github.com/coreos/etcd /usr/src/etcd && cd /usr/src/etcd && make"
+src['/usr/src/etcd']="git clone https://github.com/coreos/etcd /usr/src/etcd && apt-get install -y golang &&  cd /usr/src/etcd && make"
 
 # On exit, run this
 trap '_post' 0

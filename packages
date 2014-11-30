@@ -3,9 +3,7 @@
 -v4l-utils
 -timidity
 -xauth
--x11-common
--xauth
--x11-common
+#-x11-common
 -xfonts-utils 
 -xfonts-encodings
 +build-essential
@@ -49,3 +47,13 @@
 +vim
 -nano
 +ethtool
+#lcd hull
++zlibc
++libpng3
++libfreetype6
++libfreetype6-dev 
++python-pip
+#lcd Drogon
++python-dev
++python-imaging
++python-imaging-tk
