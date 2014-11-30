@@ -10,7 +10,7 @@ do2="${_p}**${_e}"
 do3="${_p}***${_e}"
 
 # what module to run, by dafault
-WHAT="packages interfaces rpi-update sources fstab fsck"
+WHAT="packages interfaces rpi-update sources fstab fsck spi"
 # File listing package to add and remove
 PACKAGES_FILE=packages
 
@@ -23,11 +23,12 @@ src['/usr/src/aircrack-ng']="svn co http://svn.aircrack-ng.org/trunk/ /usr/src/a
 #src['/usr/src/wiringPi']="git clone git://git.drogon.net/wiringPi /usr/src/wiringPi && cd /usr/src/wiringPi && ./build"
 #src['/usr/src/pcd8544']='git clone https://github.com/XavierBerger/pcd8544.git /usr/src/pcd8544 ; pip install wiringpi2 ; pip install spidev ; cd /usr/src/pcd8544 ; ./setup.py clean build ; ./setup.py install '
 src['/usr/src/wiringPi']="git clone https://github.com/rm-hull/wiringPi /usr/src/wiringPi && cd /usr/src/wiringPi && ./build"
-src['/usr/src/pcd8544']='git clone https://github.com/rm-hull/pcd8544.git /usr/src/pcd8544 && pip install pillow & cd /usr/src/pcd8544 && ./setup.py clean build && ./setup.py install '
+src['/usr/src/pcd8544']='git clone https://github.com/rm-hull/pcd8544.git /usr/src/pcd8544 && pip install pillow && cd /usr/src/pcd8544 && ./setup.py clean build && ./setup.py install '
 src['/usr/src/wifite']="git clone https://github.com/Korsani/wifite.git /usr/src/wifite && mkdir -p $HOME/bin && ln -f -s /usr/src/wifite/wifite.py $HOME/bin/wifite.py"
 src['/usr/src/dosfstools']="git clone http://daniel-baumann.ch/git/software/dosfstools.git /usr/src/dosfstools && cd /usr/src/dosfstools && make"
-src["/usr/src/etcd-$ETCD_VERSION"]="curl -L http://koca-root.s3.amazonaws.com/go-$GO_VERSION-bin-armv6.tar.gz | tar -C $HERE -xzf - && curl -L https://github.com/coreos/etcd/archive/v$ETCD_VERSION.tar.gz | tar -C /usr/src -xzf - && cd /usr/src/etcd-$ETCD_VERSION && PATH=$PATH:$HERE/go/bin ./build && cp bin/etcd  /usr/local/sbin/ && cp bin/etcdctl bin/etcd-migrate /usr/local/bin/ && rm -rf $HERE/go "
+src["/usr/src/etcd-$ETCD_VERSION"]="curl -L http://koca-root.s3.amazonaws.com/go-$GO_VERSION-bin-armv6.tar.gz | tar -C $HERE -xzf - && curl -L https://github.com/coreos/etcd/archive/v$ETCD_VERSION.tar.gz | tar -C /usr/src -xzf - && cd /usr/src/etcd-$ETCD_VERSION && GOROOT=$HERE/go PATH=$PATH:$HERE/go/bin ./build && cp bin/etcd  /usr/local/sbin/ && cp bin/etcdctl bin/etcd-migrate /usr/local/bin/ && rm -rf $HERE/go "
 
+totalMem=$(grep MemTotal /proc/meminfo  | awk '{print $2}')
 # On exit, run this
 trap '_post' 0
 
@@ -44,7 +45,7 @@ function _post(){
 	mount / -o remount,sync
 }
 function _check_default_route() {
-	netstat -r | grep -q default
+	netstat -r | egrep -q 'default|*' && ping -c 1 -q www.free.fr >/dev/null 2>&1
 }
 function _warn(){
 	[ -n "$WAS_WARNED" ] && return 0
@@ -70,7 +71,7 @@ function packages() {
 	apt-get update ; apt-get upgrade -y
 	echo "$do1 Installing packages"
 	packages=$(egrep '^\+' $PACKAGES_FILE | sed -e 's/^\+//' | xargs)
-	xargs apt-get -y install $packages
+	apt-get -y install $packages
 	echo "$do1 Removing orphans"
 	while [ -n "$(deborphan)" ]
 	do
@@ -112,7 +113,7 @@ function fstab() {
 	if [ ! -e "/etc/fstab.d/00-tmpfs.fstab" ]
 	then
 		echo "$do1 Installing tmp as tmpfs"
-		echo 'tmpfs           /tmp            tmpfs   defaults        0       0' >> "/etc/fstab.d/00-tmpfs.fstab"
+		echo "tmpfs           /tmp            tmpfs   defaults,size=$(expr $totalMem / 2)k        0       0" >> "/etc/fstab.d/00-tmpfs.fstab"
 		mount -t tmpfs tmpfs /tmp
 	fi
 	echo "$do1 Puting sync option to /"
@@ -139,6 +140,12 @@ function rpi-update(){
 	mount /boot
 	/usr/bin/rpi-update
 	umount /boot
+}
+# Load spi module at boot
+function spi() {
+	echo "$do1 Unblacklisting spi-bcm2708"
+	grep -v 'spi-bcm2708' /etc/modprobe.d/raspi-blacklist.conf > /tmp/$$
+	mv /tmp/$$ /etc/modprobe.d/raspi-blacklist.conf
 }
 #####
 # Run all of this

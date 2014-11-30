@@ -1,10 +1,22 @@
-#!/bin/bash
+#!/usr/bin/env bash
+IFACE=wlan0
 while [ "$1" != "" ]
 do
 	case $1 in
-		wpa) echo "Enter passphrase for ssid $2" ;wpa_passphrase "$2" > /tmp/wpa ; wpa_supplicant -B -D wext -i wlan0 -c /tmp/wpa ; dhclient -1 wlan0 ;;
-		wep) read -p "Enter passphrase for ssid $2" -s pass ;ifconfig wlan0 up;iw dev wlan0 connect "$2" key 0:"$pass";dhclient -1 wlan0;;
-		kill) for p in wifite.py broadcast-keys airodump-ng aireplay-ng ; do pkill $p ; done; kill $(cat /var/run/run-at-boot.pid);;
+		wpa) echo "Enter passphrase for ssid $2" ;wpa_passphrase "$2" > /tmp/wpa ; wpa_supplicant -B -D wext -i $IFACE -c /tmp/wpa ; dhclient -1 $IFACE ;;
+		wep)
+			if ! grep -q ",$2," cracked.csv 
+			then
+				read -p "Enter passphrase for ssid $2: " -s pass
+			else
+				echo "Got pass for $2"
+				pass=$(grep ",$2," cracked.csv | cut -d ',' -f 4)
+			fi
+			ifconfig $IFACE up
+			iw dev $IFACE connect "$2" key 0:"$pass"
+			dhclient -1 $IFACE
+			;;
+		kill) for p in wifite.py broadcast-keys airodump-ng aireplay-ng ; do pkill $p ; done; kill $(cat /var/run/run-at-boot.pid); airmon-ng stop ${IFACE}mon ;;
 	esac
 	shift
 done
