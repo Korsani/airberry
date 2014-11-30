@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/bin
 export HOME=/root
-(/root/kocrack/welcome.py ; sleep 60 ; /root/kocrack/welcome.py ) &
+(/root/kocrack/airberry_logo.py ; sleep 60 ; /root/kocrack/welcome.py ) &
 IFACE=wlan0
 if  ! ifconfig -a $IFACE >/dev/null 
 then
