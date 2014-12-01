@@ -3,7 +3,7 @@ eval "$(bash $(dirname "$0")/libkoca.sh koca_lockMe)"
 koca_lockMe /tmp/check-fs-space 0
 FS="$1"
 LOW_WATER_SPACE=500
-SOCKET=/var/run/kocrack
+SOCKET=/var/run/airberry
 [ -z "$FS" ] && exit 1
 [ ! -p "$SOCKET" ] && exit 1
 exec 5<>$SOCKET
