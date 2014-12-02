@@ -10,7 +10,7 @@ do2="${_p}**${_e}"
 do3="${_p}***${_e}"
 
 # what module to run, by dafault
-WHAT="packages interfaces rpi-update sources fstab fsck spi"
+WHAT="packages interfaces rpi-update sources fstab fsck spi conf"
 # File listing package to add and remove
 PACKAGES_FILE=packages
 
@@ -146,6 +146,13 @@ function spi() {
 	echo "$do1 Unblacklisting spi-bcm2708"
 	grep -v 'spi-bcm2708' /etc/modprobe.d/raspi-blacklist.conf > /tmp/$$
 	mv /tmp/$$ /etc/modprobe.d/raspi-blacklist.conf
+}
+function conf() {
+	if [ ! -e /etc/airberry.conf ]
+	then
+		cp aireberry.conf.dist /etc/airberry.conf
+		echo "$do1 Installed /etc/airberry.conf"
+	fi
 }
 #####
 # Run all of this
