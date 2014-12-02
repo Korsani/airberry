@@ -1,5 +1,7 @@
 Transform a Raspberry Pi to an automated cracking box
 
+Of course, crack only wep
+
 # Installation 
 
 1. Plug an 5110 screen (PCD8544) to the Raspberry. Lib used is [this one](https://github.com/rm-hull/pcd8544), and you'll find there instructions to plug one. You can buy such a screen on eBay for no cost.
@@ -19,3 +21,4 @@ Logs are /tmp/wifite.log and /tmp/airberry.log
 
 * [Modified Wifite](https://github.com/Korsani/wifite) for cracking
 * [etcd](https://github.com/coreos/etcd) for communication between scripts
+* You can safely unplug Rpi whenever you want
