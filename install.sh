@@ -113,7 +113,7 @@ function fstab() {
 	if [ ! -e "/etc/fstab.d/00-tmpfs.fstab" ]
 	then
 		echo "$do1 Installing tmp as tmpfs"
-		echo "tmpfs           /tmp            tmpfs   defaults,size=$(expr $totalMem / 2)k        0       0" >> "/etc/fstab.d/00-tmpfs.fstab"
+		echo "tmpfs           /tmp            tmpfs   defaults,size=$(expr $totalMem \* 3 / 4)k        0       0" >> "/etc/fstab.d/00-tmpfs.fstab"
 		mount -t tmpfs tmpfs /tmp
 	fi
 	echo "$do1 Puting sync option to /"
