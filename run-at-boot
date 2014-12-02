@@ -2,6 +2,7 @@
 export HERE=$(cd $(dirname "$0") ; pwd)
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/bin:$HERE
 export HOME=/root
+source /etc/airberry.conf
 $HERE/lcd.py backlight 0
 $HERE/airberry_logo.py ; sleep 3
 IFACE=wlan0
@@ -13,7 +14,6 @@ then
 	exit 1
 fi
 echo $$ > /var/run/$(basename "$0").pid
-cd $HOME
 mkfifo /var/run/airberry
 nohup $HERE/check-fs-space.sh /tmp &
 #airmon-ng start wlan0
@@ -22,6 +22,8 @@ sort -u -t ',' -k 3 $HOME/cracked.csv $HERE/cracked.csv > /tmp/c
 mv /tmp/c $HERE/cracked.csv && rm -f $HOME/cracked.csv
 while true
 do
+	#$HERE/lcd.py cls
+	#$HERE/lcd.py text 0 2 'Wifite'
 	$HOME/bin/wifite.py --wep -1 --all --scan-time 60 --power 15 --lcd >>/tmp/wifite.log
-	$HERE/broadcast-keys >> /tmp/wifite.log
+	$HERE/broadcast-keys $DISPLAY >> /tmp/wifite.log
 done
