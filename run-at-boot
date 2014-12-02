@@ -18,12 +18,15 @@ mkfifo /var/run/airberry
 nohup $HERE/check-fs-space.sh /tmp &
 #airmon-ng start wlan0
 # Sort according to essid
+touch $HOME/cracked.csv
 sort -u -t ',' -k 3 $HOME/cracked.csv $HERE/cracked.csv > /tmp/c
-mv /tmp/c $HERE/cracked.csv && rm -f $HOME/cracked.csv
+mv /tmp/c $HERE/cracked.csv
+rm -f $HOME/cracked.csv
 while true
 do
 	#$HERE/lcd.py cls
 	#$HERE/lcd.py text 0 2 'Wifite'
+	cd $HOME # As wifite save cracked.csv in the dir it was run from
 	$HOME/bin/wifite.py --wep -1 --all --scan-time 60 --power 15 --lcd >>/tmp/wifite.log
 	$HERE/broadcast-keys $DISPLAY >> /tmp/wifite.log
 done
