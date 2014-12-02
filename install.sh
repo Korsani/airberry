@@ -10,7 +10,7 @@ do2="${_p}**${_e}"
 do3="${_p}***${_e}"
 
 # what module to run, by dafault
-WHAT="packages interfaces rpi-update sources fstab fsck spi conf"
+WHAT="packages interfaces rpi-update sources fstab fsck spi conf etcd"
 # File listing package to add and remove
 PACKAGES_FILE=packages
 
@@ -153,6 +153,12 @@ function conf() {
 		cp aireberry.conf.dist /etc/airberry.conf
 		echo "$do1 Installed /etc/airberry.conf"
 	fi
+}
+function etcd() {
+	echo "$do1 Installing etcd init script"
+	cp etcd.initd /etc/init.d/etcd
+	chmod +x /etc/init.d/etcd
+	update-rc.d etcd defaults
 }
 #####
 # Run all of this
