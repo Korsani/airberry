@@ -4,7 +4,7 @@ HERE=$(cd $(dirname "$0") ; pwd)
 # Wonderful library
 source "$HERE"/libkoca.sh
 # to get colored output
-getColor _w white _e reset _p purple _r hired
+getColor _w white _e reset _p purple _r hired _c cyan
 do1="${_p}*${_e}"
 do2="${_p}**${_e}"
 do3="${_p}***${_e}"
@@ -103,7 +103,7 @@ function sources() {
 	do
 		if [ ! -d $d ]
 		then
-			echo "$do1 Installing $(basename $d)"
+			echo "$do1 Installing $_c$(basename $d)$_e"
 			eval ${src[$d]}
 		fi
 	done
