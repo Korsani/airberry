@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+# Script to handle infos in etcd, and act accordingly

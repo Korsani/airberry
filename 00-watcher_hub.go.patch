@@ -1,0 +1,15 @@
+# Avoid panic on wait on 32 bits arch
+--- store/watcher_hub.go.1417611088	2014-12-03 13:51:28.940906025 +0100
++++ store/watcher_hub.go	2014-12-03 13:52:35.903167903 +0100
+@@ -17,9 +17,9 @@
+ // event happens between the end of the first watch command and the start
+ // of the second command.
+ type watcherHub struct {
+-	mutex        sync.Mutex // protect the hash map
+-	watchers     map[string]*list.List
+ 	count        int64 // current number of watchers.
++	watchers     map[string]*list.List
++	mutex        sync.Mutex // protect the hash map
+ 	EventHistory *EventHistory
+ }
+ 

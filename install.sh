@@ -15,6 +15,7 @@ WHAT="packages interfaces rpi-update sources fstab fsck spi conf etcd"
 PACKAGES_FILE=packages
 
 ETCD_VERSION='0.5.0-alpha.4'
+#ETCD_VERSION='0.4.6'
 GO_VERSION='1.3.3'
 
 # Third part to install : their dir and how to build/install them
@@ -26,7 +27,8 @@ src['/usr/src/wiringPi']="git clone https://github.com/rm-hull/wiringPi /usr/src
 src['/usr/src/pcd8544']='git clone https://github.com/rm-hull/pcd8544.git /usr/src/pcd8544 && pip install pillow && cd /usr/src/pcd8544 && ./setup.py clean build && ./setup.py install '
 src['/usr/src/wifite']="git clone https://github.com/Korsani/wifite.git /usr/src/wifite && mkdir -p $HOME/bin && ln -f -s /usr/src/wifite/wifite.py $HOME/bin/wifite.py"
 src['/usr/src/dosfstools']="git clone http://daniel-baumann.ch/git/software/dosfstools.git /usr/src/dosfstools && cd /usr/src/dosfstools && make"
-src["/usr/src/etcd-$ETCD_VERSION"]="echo 'Downloading...' ; curl -s -L http://koca-root.s3.amazonaws.com/go$GO_VERSION-bin-armv6.tar.gz | tar -C /tmp/ -xzf - && curl -s -L https://github.com/coreos/etcd/archive/v$ETCD_VERSION.tar.gz | tar -C /usr/src -xzf - && cd /usr/src/etcd-$ETCD_VERSION && echo 'Compiling...' && GOROOT=/tmp/go PATH=$PATH:/tmp/go/bin ./build && cp bin/etcd  /usr/local/sbin/ && cp bin/etcdctl bin/etcd-migrate /usr/local/bin/ && rm -rf $HERE/go "
+src["/usr/src/etcd-$ETCD_VERSION"]="echo 'Downloading Go' ; curl -s -L http://koca-root.s3.amazonaws.com/go$GO_VERSION-bin-armv6.tar.gz | tar -C /tmp/ -xzf - && echo 'Downloading etcd' && curl -s -L https://github.com/coreos/etcd/archive/v$ETCD_VERSION.tar.gz | tar -C /usr/src -xzf - && cd /usr/src/etcd-$ETCD_VERSION && patch -p0 < $HERE/00-watcher_hub.go.patch && echo 'Compiling etcd' && GOROOT=/tmp/go PATH=$PATH:/tmp/go/bin ./build && rm -rf /tmp/go && cp bin/etcd  /usr/local/sbin/ && cp bin/etcdctl bin/etcd-migrate /usr/local/bin/ ; echo 'Installing python binding' ; cd /tmp ; pip install python-etcd "
+src["/usr/src/python-etcd"]="git clone https://github.com/jplana/python-etcd.git /usr/src/python-etcd"
 
 totalMem=$(grep MemTotal /proc/meminfo  | awk '{print $2}')
 # On exit, run this
