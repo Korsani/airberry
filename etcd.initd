@@ -18,7 +18,7 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin
 DESC="Etcd"
 NAME=etcd
 DAEMON=/usr/local/sbin/$NAME
-DAEMON_ARGS="-data-dir /var/etcd/"
+DAEMON_ARGS="-data-dir /var/etcd/ -name airberry"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
