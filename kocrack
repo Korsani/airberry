@@ -16,7 +16,7 @@ do
 			iw dev $IFACE connect "$2" key 0:"$pass"
 			dhclient -1 $IFACE
 			;;
-		kill) for p in wifite.py broadcast-keys airodump-ng aireplay-ng ; do pkill $p ; done; kill $(cat /var/run/run-at-boot.pid); airmon-ng stop ${IFACE}mon ;;
+		kill) for p in wifite.py broadcast-keys airodump-ng aireplay-ng ; do pkill $p ; done; kill $(cat /tmp/check-fs-space);kill $(cat /var/run/run-at-boot.pid); airmon-ng stop ${IFACE}mon ;;
 	esac
 	shift
 done
