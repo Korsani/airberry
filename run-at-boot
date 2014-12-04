@@ -17,9 +17,6 @@ then
 	echo 'Etcd is not running. Exiting.'
 	exit 1
 fi
-Log 'Creating dirs in etcd'
-curl -s -L http://127.0.0.1:4001/v2/keys/monitor -XPUT -d dir=true >/dev/null
-curl -s -L http://127.0.0.1:4001/v2/keys/cracked -XPUT -d dir=true >/dev/null
 if  ! ifconfig -a $IFACE >/dev/null 
 then
 	Log "$IFACE not found"
@@ -28,17 +25,15 @@ then
 	exit 1
 fi
 echo $$ > /var/run/$(basename "$0").pid
-Log 'Launching check-fs-space'
-nohup $HERE/check-fs-space.sh /tmp > /dev/null &
-Log 'Launching airberryd'
-nohup $HERE/airberryd > /tmp/airberryd.log &
+Log 'Launching check-fs-space' ; nohup $HERE/check-fs-space.sh /tmp > /dev/null &
+Log 'Launching airberryd' ; nohup $HERE/airberryd > /tmp/airberryd.log &
 #airmon-ng start wlan0
 # Sort according to essid
 touch $HOME/cracked.csv
 sort -u -t ',' -k 3 $HOME/cracked.csv $HERE/cracked.csv > /tmp/c
 mv /tmp/c $HERE/cracked.csv
 rm -f $HOME/cracked.csv
-ifconfig ${IFACE}mon 2>/dev/null && airmon-ng stop ${IFACE}mon
+ifconfig ${IFACE}mon 2>/dev/null && Log "Deactivating ${IFACE}mon" && airmon-ng stop ${IFACE}mon
 while true
 do
 	Log 'Looping...'
@@ -46,14 +41,14 @@ do
 	#$HERE/lcd.py text 0 2 'Wifite'
 	cd $HOME # As wifite save cracked.csv in the dir it was run from
 	Log "Launching wifite"
-	$HOME/bin/wifite.py --wep -1 --all --scan-time 60 --power 15 --lcd >>/tmp/wifite.out
+	$HOME/bin/wifite.py --wep -1 --all --scan-time 60 --power 15 --etcd $ETCD_DIR >>/tmp/wifite.out
 	Log "Cleaning dirs left by airodump-ng "
 	ps -C airodump-ng -O cmd | grep tmp | awk '{print $12}' | while read d ; do [ -z "$d" ] && continue ;dir="$(dirname $d)"; Log "> $dir" ; rm -rf "$dir" ; done
-	for cmd in airodump-ng  aireplay-ng
+	for cmd in airodump-ng aireplay-ng
 	do
 		Log "Killing stall $cmd"
 		pkill "$cmd"
 	done
-	Log "Launching broadcast-keys"
-	$HERE/broadcast-keys $DISPLAY >> /tmp/wifite.out
+    airmon-ng stop ${IFACE}mon
+	# Log "Launching broadcast-keys"; $HERE/broadcast-keys $DISPLAY >> /tmp/wifite.out
 done
