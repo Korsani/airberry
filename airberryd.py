@@ -3,16 +3,24 @@
 import pcd8544.lcd as lcd
 import etcd
 import os, string, time, signal, sys
+from datetime import datetime
 """
 For pcd8544
 """
 LCD_LINES=6
 LCD_COLUMNS=14
 
-
 PIDFILE='/var/run/'+os.path.basename(sys.argv[0])+'.pid'
+CONF_FILE='/etc/airberry.conf'
+CONF={}
+
+# Log function
+def Log(sMessage):
+    print '['+datetime.strftime(datetime.now(),'%Y/%m/%d %H:%M:%S')+'] '+sMessage
+
+# Receive and parse etcd's datas
 def parseEtcd(client):
-    sStatus=str(client.read('/airberry/status').value)
+    sStatus=str(client.read('/'+CONF['ETCD_DIR']+'/status').value)
     aStatus=string.split(sStatus,':')
     return aStatus
 
@@ -31,6 +39,7 @@ def splitLineForLCD(sLine,iWidth):
 
     return aChunks
 
+# Display array to LCD, eventually 'scrolling'
 def display(aToDisplay):
     aDisplay=[]
     lcd.cls()
@@ -77,17 +86,23 @@ def status_wifite(sWhat,sValue):
 
 def status_cfs(sWhat,sValue):
     if sValue=='DISK_FULL':
-        aToDisplay[sValue]='DF:Reboot'
+        aToDisplay[sValue]="DF:Reboot\n"
     return aToDisplay
+
 def status_rab(sWhat,sValue):
     if 'wifite' in aToDisplay:
         del aToDisplay['wifite']
-    aToDisplay['rab']=sValue
+    aToDisplay['rab']=sValue+"\n"
     return aToDisplay
 
 def INTHandler(signum,frame):
     os.unlink(PIDFILE)
     sys.exit()
+
+def parseConf(sCfgFile):
+    for line in [line.strip() for line in open(sCfgFile,'r')]:
+        [key,value]=line.split('=')
+        CONF[key]=value
 
 if __name__ == "__main__":
     pid=str(os.getpid())
@@ -97,9 +112,16 @@ if __name__ == "__main__":
     else:
         file(PIDFILE, 'w').write(pid)
         signal.signal(signal.SIGINT,INTHandler)
+        signal.signal(signal.SIGTERM,INTHandler)
+
+    parseConf(CONF_FILE)
+
+    Log('Starting')
+
     lcd.init()
-    lcd.set_contrast(180)
-    client=etcd.Client()
+    Log('Setting contrast to '+CONF['LCD_CONTRAST'])
+    lcd.set_contrast(int(CONF['LCD_CONTRAST']))
+    client=etcd.Client(port=int(CONF['ETCD_PORT']))
     aToDisplay={}
     while True:
         aStatus=parseEtcd(client)
