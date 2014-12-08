@@ -10,7 +10,7 @@ do
 	space=$(df "$FS" | tail -1 | awk '{print $4}')
 	if [ "$space" -le $LOW_WATER_SPACE ]
 	then
-		curl -L http://127.0.0.1:4001/v2/keys/$ETCD_DIR/monitor -XPOST -d value=DISK_FULL
+		curl -L http://127.0.0.1:$ETCD_PORT/v2/keys/$ETCD_DIR/status -XPUT -d value='cfs:ALERT:DISK_FULL'
 		$HERE/lcd.py cls
 		$HERE/lcd.py text 0 0 'Disk full !'
 	fi
