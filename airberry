@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-IFACE=wlan0
+source /etc/airberry.conf
 while [ "$1" != "" ]
 do
 	case $1 in
+        list) etcdctl ls -p --recursive ;;
 		wpa) echo "Enter passphrase for ssid $2" ;wpa_passphrase "$2" > /tmp/wpa ; wpa_supplicant -B -D wext -i $IFACE -c /tmp/wpa ; dhclient -1 $IFACE ;;
 		wep)
 			if ! grep -q ",$2," cracked.csv 
@@ -16,11 +17,11 @@ do
 			iw dev $IFACE connect "$2" key 0:"$pass"
 			dhclient -1 $IFACE
 			;;
-		kill) for p in wifite.py broadcast-keys airodump-ng aireplay-ng ; do pkill $p ; done; kill $(cat /tmp/check-fs-space);kill $(cat /var/run/run-at-boot.pid); airmon-ng stop ${IFACE}mon ;;
+        kill) for p in wifite.py broadcast-keys airodump-ng aireplay-ng ; do pkill $p ; done; kill $(cat /tmp/check-fs-space) $(cat /var/run/run-at-boot.pid) $(cat /var/run/airberryd.py.pid); airmon-ng stop ${IFACE}mon ;;
     status)
             case $2 in
-                wifite) curl -s -L http://127.0.0.1:4001/v2/keys/wifite/status | jq '.node.value';;
-                *) curl -s -L http://127.0.0.1:4001/v2/keys/airberry/status | jq '.node.value';;
+                wifite) curl -s -L http://127.0.0.1:$ETCD_PORT/v2/keys/wifite/status | jq '.node.value';;
+                *) curl -s -L http://127.0.0.1:$ETCD_PORT/v2/keys/airberry/status | jq '.node.value';;
              esac
 	esac
 	shift
