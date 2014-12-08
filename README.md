@@ -12,14 +12,14 @@ Of course, crack only wep
 
 3. Run install.sh as root. This **WILL** break things, such as installing/uninstalling packages, modifying mount options, ...
 
-4. Put that in your rc.local :
-nohup /path/to/airberry/run-at-boot > /tmp/run-at-boot.log 2>&1 &
+4. Put that in your rc.local : `nohup /path/to/airberry/run-at-boot > /var/log/run-at-boot.log 2>&1 &`
 
 # Usage
 
 Reboot.
 
-Logs are /tmp/wifite.out and /tmp/run-at-boot.log
+Wait for infos to be displayed.
+Logs are /var/log/wifite.out and /var/log/run-at-boot.log.
 
 Info of what is happening (wifi scanning, key found, ...) is on the screen
 
@@ -29,3 +29,12 @@ Info of what is happening (wifi scanning, key found, ...) is on the screen
 * [etcd](https://github.com/coreos/etcd) for communication between scripts
 * You can safely unplug Rpi whenever you want
 * No password will be broadcasted anywhere, unless you want to
+
+# Under the hood
+
+Etcd's stuff :
+`/airberry/status`          Global status
+`/cracked/history/`         Directory where resides cracked AP
+`/cracked/from_reboot/`     Same, but cleaned at reboot
+`/wifite/last_cracked`      SSID of last cracked AP
+`/wifite/status`            Status of wifite
