@@ -1,1 +1,4 @@
 DISPLAY=lcd
+IFACE=wlan0
+ETCD_DIR=airberry
+ETCD_PORT=4001
