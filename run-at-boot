@@ -3,6 +3,9 @@ export HERE=$(cd $(dirname "$0") ; pwd)
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/bin:$HERE
 export HOME=/root
 export ME=$(basename "$0")
+# On some backlight, backlight is on when 0 is sent...
+BL_ON=0
+BL_OFF=1
 source /etc/airberry.conf
 function Log() {
 	echo "[$(date "+%Y/%m/%d %H:%M")] ""$@"
@@ -10,7 +13,7 @@ function Log() {
 }
 Log 'Starting'
 Log 'Backlight off'
-$HERE/lcd.py backlight 0
+$HERE/lcd.py backlight $BL_OFF
 Log 'Displaying logo'
 $HERE/airberry_logo.py ; sleep 3
 if ! /etc/init.d/etcd status >/dev/null 2>&1 
@@ -27,7 +30,7 @@ then
 fi
 echo $$ > /var/run/$(basename "$0").pid
 Log 'Launching check-fs-space' ; nohup $HERE/check-fs-space.sh /tmp > /dev/null &
-Log 'Launching airberryd' ; nohup $HERE/airberryd.py > /tmp/airberryd.log &
+Log 'Launching airberryd' ; nohup $HERE/airberryd.py > /var/log/airberryd.log &
 Log 'Cleaning "from_reboot" dir of etcd' ; curl http://127.0.0.1:$ETCD_PORT/v2/keys/cracked/from_reboot?recursive=true -XDELETE >/dev/null
 #airmon-ng start wlan0
 # Sort according to essid
@@ -40,17 +43,17 @@ while true
 do
 	Log 'Looping...'
     # If cracked.csv is not here, swicth off light, as I'm probably debbuging something...
-    [ ! -e $HERE/cracked.csv ] && $HERE/lcd.py backlight 0
+    [ ! -e $HERE/cracked.csv ] && $HERE/lcd.py backlight $BL_OFF
 	#$HERE/lcd.py cls
 	#$HERE/lcd.py text 0 2 'Wifite'
 	cd $HOME # As wifite save cracked.csv in the dir it was run from
 	Log "Launching wifite"
-	$HOME/bin/wifite.py --wep -1 --all --scan-time 60 --power 15 --etcd $ETCD_DIR >>/tmp/wifite.out
-	Log "Cleaning dirs left by airodump-ng"
+	$HOME/bin/wifite.py --wep -1 --all --scan-time 60 --power 15 --etcd $ETCD_DIR >>/var/log/wifite.out
+	Log "Cleaning dirs"
 	ps -C airodump-ng -O cmd | grep tmp | awk '{print $12}' | while read d ; do [ -z "$d" ] && continue ;dir="$(dirname $d)"; Log "> $dir" ; rm -rf "$dir" ; done
 	for cmd in airodump-ng aireplay-ng
 	do
-		Log "Killing stall $cmd"
+		Log "Killing stall processes"
 		pkill "$cmd"
 	done
     airmon-ng stop ${IFACE}mon

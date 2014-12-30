@@ -13,7 +13,8 @@ LCD_COLUMNS=14
 PIDFILE='/var/run/'+os.path.basename(sys.argv[0])+'.pid'
 CONF_FILE='/etc/airberry.conf'
 CONF={}
-
+# On some screen backlight is on when 0 is sent ...
+(ON,OFF)=(0,1)
 # Log function
 def Log(sMessage):
     print '['+datetime.strftime(datetime.now(),'%Y/%m/%d %H:%M:%S')+'] '+sMessage
@@ -70,7 +71,7 @@ def status_wifite(sWhat,sValue):
         except:
             print 'Unexpected error:',sys.exec_info()[0]
         else:
-            lcd.backlight(1)
+            lcd.backlight(ON)
             aToDisplay[sValue]=">"+sValue+':'+sKey+"\n"
             if 'wifite' in aToDisplay:
                 del aToDisplay['wifite']
