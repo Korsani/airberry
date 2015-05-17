@@ -5,13 +5,6 @@
 _outdated() {
     eval alias $1="\"echo '[libkoca.sh] Please use koca_$1, instead of $1'; koca_$1\""
 }
-# Lib of useful function, for shell addicts
-# Inclusions of function depend on wether it as succeeded to shunit or not
-# Brought to you under GPL Licence, by Gab
-
-_outdated() {
-    eval alias $1="\"echo '[libkoca.sh] Please use koca_$1, instead of $1'; koca_$1\""
-}
 function koca_b2gmk {	# seconds to day hour min sec
 	w=$1
 	[ -z "$w" ] && read w
@@ -102,9 +95,12 @@ function checkNeededFiles {
 # $ f
 # Le fichier temporaire ne sera jamais effacé
 function koca_cleanOnExit { # Remove specified file on script exiting
-	local t=$(trap -p 0)
-	[ -n "$t" ] && _oldTrap0=$(echo "$t ;" | sed -e "s/trap -- '\(.*\)' EXIT/\1/")
-	trap "$_oldTrap0 rm -f $*" 0
+	for file in "$@"
+	do
+		local t=$(trap -p 0)
+		[ -n "$t" ] && _oldTrap0=$(echo "$t ;" | sed -e "s/trap -- '\(.*\)' EXIT/\1/")
+		trap "$_oldTrap0 rm -f \"$file\"" 0
+	done
 }
 function dhms2s {	# day hour min sec to seconds
 	# can be specified in any order :
@@ -393,6 +389,17 @@ function koca_isNumeric { # return true if parameter is numeric
 function koca_join { # join lines from STDIN whith $1
 	cat | sed -e ":a;N;\$!ba;s/\n/$1/g"
 }
+# Return true is load is less or equal to value
+function koca_load() { # Return true if load is less or equals to specified float value
+	thr=$1
+	if [[ $thr =~ ^-?[0-9]+\.?[0-9]*$ ]]
+	then
+		return  $(bc <<< "$(cat /proc/loadavg | awk '{printf "%.0f",$1}') > $1")
+	else
+		echo "[libkoca.sh] '$1' is not a float or int" >&2
+		return 2
+	fi
+}
 # Fournit un mechanisme de lock: empeche plusieurs instances 
 # de tourner en meme temps.
 # Efface le lock s'il est vide, ou s'il ne correspond vraisemblablement pas au processus qui essait de le créer
@@ -477,6 +484,11 @@ function koca_log {
 		shift
 		echo "$*" 
 	fi
+}
+function koca_quotemeta { # Escape meta character
+	local s="$1"
+	# Is it cheating ?
+	echo "$s" | perl  '-ple$_=quotemeta'
 }
 function s2dhms {	# seconds to day hour min sec
 	w=$1
@@ -575,4 +587,4 @@ do
 	shift
 done
 )
-# built on 2014-10-26
+# built on 2015-05-17
