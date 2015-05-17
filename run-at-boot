@@ -13,7 +13,7 @@ function Log() {
 }
 Log 'Starting'
 Log 'Backlight off'
-$HERE/lcd.py backlight $BL_OFF
+$HERE/lcd.py backlight off
 Log 'Displaying logo'
 $HERE/airberry_logo.py ; sleep 3
 if ! /etc/init.d/etcd status >/dev/null 2>&1 
