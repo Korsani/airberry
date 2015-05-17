@@ -5,6 +5,7 @@ HERE=$(cd $(dirname "$0") ; pwd)
 source "$HERE"/libkoca.sh
 # to get colored output
 getColor _w white _e reset _p purple _r hired _c cyan
+do0="${_p}>${_e}"
 do1="${_p}*${_e}"
 do2="${_p}**${_e}"
 do3="${_p}***${_e}"
@@ -28,7 +29,7 @@ src['/usr/src/wiringPi']="git clone https://github.com/rm-hull/wiringPi /usr/src
 src['/usr/src/pcd8544']='git clone https://github.com/rm-hull/pcd8544.git /usr/src/pcd8544 && pip install pillow && cd /usr/src/pcd8544 && ./setup.py clean build && ./setup.py install '
 src['/usr/src/wifite']="git clone https://github.com/Korsani/wifite.git /usr/src/wifite && mkdir -p $HOME/bin && ln -f -s /usr/src/wifite/wifite.py $HOME/bin/wifite.py"
 src['/usr/src/dosfstools']="git clone http://daniel-baumann.ch/git/software/dosfstools.git /usr/src/dosfstools && cd /usr/src/dosfstools && make"
-src["/usr/src/etcd-$ETCD_VERSION"]="echo 'Downloading Go' ; curl -s -L http://koca-root.s3.amazonaws.com/go$GO_VERSION-bin-armv6.tar.gz | tar -C /tmp/ -xzf - && echo 'Downloading etcd' && curl -s -L https://github.com/coreos/etcd/archive/v$ETCD_VERSION.tar.gz | tar -C /usr/src -xzf - && cd /usr/src/etcd-$ETCD_VERSION && patch -p0 < $HERE/00-watcher_hub.go.patch && echo 'Compiling etcd' && GOROOT=/tmp/go PATH=$PATH:/tmp/go/bin ./build && rm -rf /tmp/go && cp bin/etcd  /usr/local/sbin/ && cp bin/etcdctl bin/etcd-migrate /usr/local/bin/ ; echo 'Installing python binding' ; cd /tmp ; pip install python-etcd "
+src["/usr/src/etcd-$ETCD_VERSION"]="echo '$do0 Downloading Go' ; curl -s -L http://koca-root.s3.amazonaws.com/go$GO_VERSION-bin-armv6.tar.gz | tar -C /tmp/ -xzf - && echo '$do0 Downloading etcd' && curl -s -L https://github.com/coreos/etcd/archive/v$ETCD_VERSION.tar.gz | tar -C /usr/src -xzf - && cd /usr/src/etcd-$ETCD_VERSION && patch -p0 < $HERE/00-watcher_hub.go.patch && echo '$do0 Compiling etcd' && GOROOT=/tmp/go PATH=$PATH:/tmp/go/bin ./build && rm -rf /tmp/go && cp bin/etcd  /usr/local/sbin/ && cp bin/etcdctl bin/etcd-migrate /usr/local/bin/ ; echo '$do0 Installing python binding' ; cd /tmp ; pip install python-etcd "
 src["/usr/src/python-etcd"]="git clone https://github.com/jplana/python-etcd.git /usr/src/python-etcd"
 src["/usr/src/jq-$JQ_VERSION"]="curl -sL http://stedolan.github.io/jq/download/source/jq-$JQ_VERSION.tar.gz | tar -C /usr/src/ -xzf - && cd /usr/src/jq-$JQ_VERSION && ./configure && make && make install"
 
@@ -49,7 +50,13 @@ function _post(){
 	mount / -o remount,sync
 }
 function _check_default_route() {
-	netstat -r | egrep -q 'default|*' && ping -c 1 -q www.free.fr >/dev/null 2>&1
+	netstat -r | egrep -q 'default|*' && ping -c 1 -q www.free.fr >/dev/null 2>&1 ; _r=$?
+	if [ $_r -ne 0 ]
+	then
+		echo "No default route" >&2
+		return 1
+	fi
+	return 0
 }
 function _warn(){
 	[ -n "$WAS_WARNED" ] && return 0
@@ -72,7 +79,7 @@ function packages() {
 	packages=$(egrep '^-' $PACKAGES_FILE | sed -e 's/^-//' | xargs)
 	apt-get -q -y purge $packages
 	echo "$do1 Updating existing packages"
-	apt-get update ; apt-get upgrade -y
+	update
 	echo "$do1 Installing packages"
 	packages=$(egrep '^\+' $PACKAGES_FILE | sed -e 's/^\+//' | xargs)
 	apt-get -y install $packages
@@ -86,6 +93,11 @@ function packages() {
 	echo "$do1 Purging conf files of uninstalled packages"
 	dpkg -l | egrep '^rc' | awk '{print $2}' | xargs apt-get -y purge
 	curl www.korsani.fr/.screenrc -o /root/.screenrc
+}
+function update() {
+	_check_default_route || return 1
+	apt-get update
+	apt-get upgrade -y
 }
 function interfaces() {
 	_warn
@@ -154,7 +166,7 @@ function spi() {
 function conf() {
 	if [ ! -e /etc/airberry.conf ]
 	then
-		cp aireberry.conf.dist /etc/airberry.conf
+		cp airberry.conf.dist /etc/airberry.conf
 		echo "$do1 Installed /etc/airberry.conf"
 	fi
 }
