@@ -8,11 +8,13 @@
 -xfonts-encodings
 +build-essential
 +curl
++pv
 -dbus
 +htop
 +tcpdump
 +subversion
 +screen
++libffi-dev
 -wolfram-engine
 -xdg-utils
 -gnome-icon-theme

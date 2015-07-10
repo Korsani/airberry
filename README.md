@@ -1,6 +1,6 @@
 Transform a Raspberry Pi to an automated cracking box
 
-Of course, crack only wep
+Of course, it cracks only wep
 
 ![AirBerry, functionning](https://lut.im/ZGuU6EWC/2VuGrC2Y)
 

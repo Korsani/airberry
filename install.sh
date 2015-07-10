@@ -17,7 +17,12 @@ PACKAGES_FILE=packages
 
 ETCD_VERSION='0.5.0-alpha.4'
 ETCD_VERSION='0.4.6'
-GO_VERSION='1.3.3'
+ETCD_URL=https://github.com/coreos/etcd/archive/v$ETCD_VERSION.tar.gz
+ETCD_SIZE=2901706
+GO_VERSION='1.4.2'
+GO_URL=http://koca-root.s3.amazonaws.com/raspberry/go$GO_VERSION-bin-armv6.tar.gz
+#curl -s -L I $GO_URL | grep Lenght | cut -d ':' -f 2
+GO_SIZE=26818141
 JQ_VERSION='1.4'
 
 # Third part to install : their dir and how to build/install them
@@ -29,7 +34,7 @@ src['/usr/src/wiringPi']="git clone https://github.com/rm-hull/wiringPi /usr/src
 src['/usr/src/pcd8544']='git clone https://github.com/rm-hull/pcd8544.git /usr/src/pcd8544 && pip install pillow && cd /usr/src/pcd8544 && ./setup.py clean build && ./setup.py install '
 src['/usr/src/wifite']="git clone https://github.com/Korsani/wifite.git /usr/src/wifite && mkdir -p $HOME/bin && ln -f -s /usr/src/wifite/wifite.py $HOME/bin/wifite.py"
 src['/usr/src/dosfstools']="git clone http://daniel-baumann.ch/git/software/dosfstools.git /usr/src/dosfstools && cd /usr/src/dosfstools && make"
-src["/usr/src/etcd-$ETCD_VERSION"]="echo '$do0 Downloading Go' ; curl -s -L http://koca-root.s3.amazonaws.com/go$GO_VERSION-bin-armv6.tar.gz | tar -C /tmp/ -xzf - && echo '$do0 Downloading etcd' && curl -s -L https://github.com/coreos/etcd/archive/v$ETCD_VERSION.tar.gz | tar -C /usr/src -xzf - && cd /usr/src/etcd-$ETCD_VERSION && patch -p0 < $HERE/00-watcher_hub.go.patch && echo '$do0 Compiling etcd' && GOROOT=/tmp/go PATH=$PATH:/tmp/go/bin ./build && rm -rf /tmp/go && cp bin/etcd  /usr/local/sbin/ && cp bin/etcdctl bin/etcd-migrate /usr/local/bin/ ; echo '$do0 Installing python binding' ; cd /tmp ; pip install python-etcd "
+src["/usr/src/etcd-$ETCD_VERSION"]="echo '$do0 Downloadunpacking Go' ; curl -s -L $GO_URL | pv -s $GO_SIZE|tar -C /tmp/ -xzf - && echo '$do0 Downloadunpacking etcd' && curl -s -L $ETCD_URL | pv -s $ETCD_SIZE | tar -C /usr/src -xzf - && cd /usr/src/etcd-$ETCD_VERSION && patch -p0 < $HERE/00-watcher_hub.go.patch && echo '$do0 Compiling etcd' && GOROOT=/tmp/go PATH=$PATH:/tmp/go/bin ./build > /tmp/build.log && rm -rf /tmp/go && cp bin/etcd  /usr/local/sbin/ && cp bin/etcdctl bin/etcd-migrate /usr/local/bin/ ; echo '$do0 Installing python binding' ; cd /tmp ; pip install python-etcd |pv -s 11294 >/dev/null"
 src["/usr/src/python-etcd"]="git clone https://github.com/jplana/python-etcd.git /usr/src/python-etcd"
 src["/usr/src/jq-$JQ_VERSION"]="curl -sL http://stedolan.github.io/jq/download/source/jq-$JQ_VERSION.tar.gz | tar -C /usr/src/ -xzf - && cd /usr/src/jq-$JQ_VERSION && ./configure && make && make install"
 
