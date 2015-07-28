@@ -25,6 +25,13 @@ GO_URL=http://koca-root.s3.amazonaws.com/raspberry/go$GO_VERSION-bin-armv6.tar.g
 GO_SIZE=26818141
 JQ_VERSION='1.4'
 
+IS_VIRT=false
+if [ "$(tail -1 /proc/1/cgroup | cut -d ':' -f 3)" != "/" ]
+then
+	echo "I'm virtualized"
+	IS_VIRT=true
+fi
+
 # Third part to install : their dir and how to build/install them
 declare -A src
 src['/usr/src/aircrack-ng']="svn co http://svn.aircrack-ng.org/trunk/ /usr/src/aircrack-ng && cd /usr/src/aircrack-ng && apt-get install -y libnl-3-dev libnl-genl-3-dev && make install && apt-get -y purge libnl-3-dev libnl-genl-3-dev && airodump-ng-oui-update"
