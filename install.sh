@@ -88,6 +88,7 @@ function packages() {
 	_warn
 	_check_default_route || return 1
 	echo "$do1 Uninstalling packages"
+	echo "$do2 File list: $PACKAGES_FILE"
 	packages=$(egrep '^-' $PACKAGES_FILE | sed -e 's/^-//' | xargs)
 	apt-get -q -y purge $packages
 	echo "$do1 Updating existing packages"
@@ -193,9 +194,17 @@ function etcd() {
 #####
 
 # You can call me $0 part_to_run
-if [ -n "$*" ]
+while [ "$1" != "" ]
+do
+	case $1 in
+	-p) PACKAGES_FILE=$2 ; shift ;;
+	*) RUN="$RUN $*" ;;
+	esac
+	shift
+done
+if [ -n "$RUN" ]
 then
-	WHAT="$*"
+	WHAT=$RUN
 fi
 echo "$do3 Will run : ${_w}$WHAT${_e}"
 _pre
