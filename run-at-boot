@@ -10,7 +10,7 @@ BL_OFF=1
 source /etc/airberry.conf
 function Log() {
 	echo "[$(date "+%Y/%m/%d %H:%M")] ""$@"
-    curl -s -L http://127.0.0.1:$ETCD_PORT/v2/keys/$ETCD_DIR/status -XPUT -d value="$ME:info:$@" >/dev/null
+	curl -s -L http://127.0.0.1:$ETCD_PORT/v2/keys/$ETCD_DIR/status -XPUT -d value="$ME:info:$@" >/dev/null
 }
 Log 'Starting'
 Log 'Backlight off'
@@ -23,12 +23,18 @@ then
 fi
 if  ! ifconfig -a $IFACE >/dev/null 
 then
-	Log "$IFACE not found"
-	$HERE/lcd.py text 0 0 "No wireless,  nothing to    crack"
-	(sleep  10 ; [ -n "$(hostname -I)" ] && $HERE/lcd.py text 0 0 $(hostname -I)) &
-	exit 1
+	if  ! ifconfig -a ${IFACE}mon
+	then
+		Log "$IFACE not found"
+		$HERE/lcd.py text 0 0 "No wireless,  nothing to    crack"
+		(sleep  10 ; [ -n "$(hostname -I)" ] && $HERE/lcd.py text 0 0 $(hostname -I)) &
+		exit 1
+	else
+		Log "Deactivating ${IFACE}mon"
+		airmon-ng stop ${IFACE}mon
+	fi
 fi
-echo $$ > /var/run/$(basename "$0").pid
+echo $$ > /var/run/$ME.pid
 Log 'Launching check-fs-space' ; nohup $HERE/check-fs-space.sh /tmp > /dev/null &
 Log 'Launching airberryd' ; nohup $HERE/airberryd.py > /var/log/airberryd.log &
 Log 'Cleaning "from_reboot" dir of etcd' ; curl -s http://127.0.0.1:$ETCD_PORT/v2/keys/cracked/from_reboot?recursive=true -XDELETE >/dev/null
@@ -38,7 +44,6 @@ touch $HOME/cracked.csv
 sort -u -t ',' -k 3 $HOME/cracked.csv $HERE/cracked.csv > /tmp/c
 mv /tmp/c $HERE/cracked.csv
 rm -f $HOME/cracked.csv
-ifconfig ${IFACE}mon 2>/dev/null && Log "Deactivating ${IFACE}mon" && airmon-ng stop ${IFACE}mon
 while true
 do
 	Log 'Looping...'
