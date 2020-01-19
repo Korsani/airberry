@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+if test -z "$BASH"
+then
+	echo "Should run under bash"
+	exit 1
+fi
 # HERE should not contain spaces, or it will fail somewhere
 HERE=$(cd $(dirname "$0") ; pwd)
 # Wonderful library
