@@ -30,13 +30,6 @@ GO_URL=http://koca-root.s3.amazonaws.com/raspberry/go$GO_VERSION-bin-armv6.tar.g
 GO_SIZE=26818141
 JQ_VERSION='1.4'
 
-IS_VIRT=false
-if [ "$(tail -1 /proc/1/cgroup | cut -d ':' -f 3)" != "/" ]
-then
-	echo "I'm virtualized"
-	IS_VIRT=true
-fi
-
 # Third part to install : their dir and how to build/install them
 declare -A src
 src['/usr/src/aircrack-ng']="svn co http://svn.aircrack-ng.org/trunk/ /usr/src/aircrack-ng && cd /usr/src/aircrack-ng && apt-get install -y libnl-3-dev libnl-genl-3-dev && make install && apt-get -y purge libnl-3-dev libnl-genl-3-dev && airodump-ng-oui-update"
@@ -49,15 +42,6 @@ src['/usr/src/dosfstools']="git clone http://daniel-baumann.ch/git/software/dosf
 src["/usr/src/etcd-$ETCD_VERSION"]="echo '$do0 Downloadunpacking Go' ; curl -s -L $GO_URL | pv -s $GO_SIZE|tar -C /tmp/ -xzf - && echo '$do0 Downloadunpacking etcd' && curl -s -L $ETCD_URL | pv -s $ETCD_SIZE | tar -C /usr/src -xzf - && cd /usr/src/etcd-$ETCD_VERSION && patch -p0 < $HERE/00-watcher_hub.go.patch && echo '$do0 Compiling etcd' && GOROOT=/tmp/go PATH=$PATH:/tmp/go/bin ./build > /tmp/build.log && rm -rf /tmp/go && cp bin/etcd  /usr/local/sbin/ && cp bin/etcdctl bin/etcd-migrate /usr/local/bin/ ; echo '$do0 Installing python binding' ; cd /tmp ; pip install python-etcd |pv -s 11294 >/dev/null"
 src["/usr/src/python-etcd"]="git clone https://github.com/jplana/python-etcd.git /usr/src/python-etcd"
 src["/usr/src/jq-$JQ_VERSION"]="curl -sL http://stedolan.github.io/jq/download/source/jq-$JQ_VERSION.tar.gz | tar -C /usr/src/ -xzf - && cd /usr/src/jq-$JQ_VERSION && ./configure && make && make install"
-
-totalMem=$(grep MemTotal /proc/meminfo  | awk '{print $2}')
-# On exit, run this
-trap '_post' 0
-
-# Sanity check
-[ $(id -u) -ne 0 ] && echo "I have to be run as root" && exit 1
-[ $(uname -m) != "armv6l" ] && echo "Not on RPi" && exit 1
-
 function _pre(){
 	echo "$do3 executing _pre"
 	mount / -o remount,async
@@ -194,6 +178,15 @@ function etcd() {
 	chmod +x /etc/init.d/etcd
 	update-rc.d etcd defaults
 }
+
+totalMem=$(grep MemTotal /proc/meminfo  | awk '{print $2}')
+# On exit, run this
+trap '_post' 0
+
+# Sanity check
+[ $(id -u) -ne 0 ] && echo "I have to be run as root" && exit 1
+! [[ $(uname -m) =~ armv[67]l ]] && echo "Not on RPi" && exit 1
+
 #####
 # Run all of this
 #####
